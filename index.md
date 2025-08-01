@@ -11,7 +11,7 @@
 对于需要长期维护大量账号的用户而言，谷歌浏览器多开并非简单的 “功能便利”，而是构建安全操作环境的基础。它通过技术手段模拟 “多设备、多环境” 的真实场景，让平台无法通过设备指纹、网络环境、操作习惯等维度关联账号，从而最大限度降低封号风险，保障多账号体系的稳定运行。
 
 
-telegram: @kukuAPT  
+TG: @kukuAPT  
 
 ### 一、机场推荐：超便宜型4元/月  
 [点击这里](https://mitce.net/aff.php?aff=19005)   
@@ -31,14 +31,14 @@ telegram: @kukuAPT
 ### 四、更简单方案（一键部署）  
 # **现在有更简单的办法 一键部署 不需要在操作下面复杂的设置**  
 
-联系 telegram：@kukuAPT 免费远程设置多开，数量不限  
+联系 TG：@kukuAPT 免费远程设置多开，数量不限  
 
 
 ### 五、批量多开Google浏览器教程  
 #### 前言：  
 按照此教程多开后的Google浏览器可以实现相互的独立性，每个浏览器上收藏的书签、增加的拓展程序都可以实现独立性并可实现独立记忆性，完全可以实现同时操作几十个账户撸毛。  
 
-需要进阶教程指导，可以联系 telegram：@kukuAPT  
+需要进阶教程指导，可以联系TG：@kukuAPT  
 ![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/1.png)
 ![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/2.png)
 
@@ -77,7 +77,7 @@ telegram: @kukuAPT
 2：`D：gugeduokai`内会看到你刚刚设置的所有多开浏览器文件夹（如看不见哪个编号则表示你没有打开过那个浏览器，回到撸毛浏览器文件夹内打开一次该编号的浏览器即可显示在`D：gugeduokai`文件夹内）。  
 ![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/11.png)
 
-需要进阶教程指导，可以联系 telegram：@kukuAPT  
+需要进阶教程指导，可以联系 TG：@kukuAPT  
 
 3：回到撸毛浏览器双击鼠标左键打开`1-1`，设置所有多开浏览器共同需要的插件、书签等内容。可使用MetaMask一套助记词批量生成100个地址，后面所有打开的浏览器可独立记忆相应编号地址，从而达到一个助记词不同浏览器操作不同地址的目的。  
 ![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/12.png)
@@ -123,7 +123,7 @@ telegram: @kukuAPT
 #### 六、简易方案（不懂配置可私聊）  
 如果上面所说的内容你完全不懂，但还是想实现单浏览器单ip地址的话，可以私聊  
 
-telegram：@kukuAPT  
+TG：@kukuAPT  
 
 
 ### 一、机场推荐：超便宜型4元/月  
@@ -143,5 +143,5 @@ telegram：@kukuAPT
 ### 九、进阶指导 & 币圈工具  
 如果你看完以上教程感到很困惑，需要进阶教程指导的话，可以联系  
 
-telegram：@kukuAPT  
+TG：@kukuAPT  
 
