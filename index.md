@@ -1,28 +1,19 @@
+批量多开Google浏览器并相互独立ip配置教程
 telegram: @kukuAPT  
 
 ### 一、VPN推荐：超便宜型4元/月  
-Mitce - Provide Online Security  
-mitce.net  
+[点击这里](https://mitce.net/aff.php?aff=19005)   
 
 
 ### 二、撸毛代理IP（亲测可一拖三）  
 优惠券：WjnbmDokhv  
 使用优惠券的用户将获得 5% 的购买折扣  
-
-Buy proxy. Personal anonymous IPv4/IPv6 proxies / PROXY6.net  
-Proxy service. Buy proxy, personal and anonymous. IPv4, IPv6 proxy. HTTPs, Socks5 proxy. Proxy for social networks  
-proxy6.net  
-
-Buy proxy. Personal anonymous IPv4/IPv6 proxies / PROXY6.net  
-Proxy service. Buy proxy, personal and anonymous. IPv4, IPv6 proxy. HTTPs, Socks5 proxy. Proxy for social networks  
-proxy6.net  
+[点击这里](https://proxy6.net/?r=454495)
+[点击这里](https://proxy6.net/a/454495)
 
 
-### 三、撸毛代理IP  
-Buy Proxy Servers | Fast & Affordable | Webshare  
-Buy Proxy Servers | Fast & Affordable | Webshare  
-Buy anonymous and private proxy servers. 10 proxies for FREE. Download proxy server list. HTTP Proxy SOCKS5 proxy servers. Rotat…  
-www.webshare.io  
+### 三、撸毛代理IP  超便宜
+[点击这里](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
 
 
 ### 四、更简单方案（一键部署）  
