@@ -27,7 +27,7 @@ telegram: @kukuAPT
 按照此教程多开后的Google浏览器可以实现相互的独立性，每个浏览器上收藏的书签、增加的拓展程序都可以实现独立性并可实现独立记忆性，完全可以实现同时操作几十个账户撸毛。  
 
 需要进阶教程指导，可以联系 telegram：@kukuAPT  
-![图片描述](https://github.com/absbsa/DKIP/blob/bd8f87381d8b302d36db068f701092719776cf92/1.png)
+![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/1.png)
 ![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/2.png)
 
 #### 一、安装正版Google浏览器  
@@ -51,30 +51,30 @@ telegram: @kukuAPT
 ![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/7.png)
 
 5：将目标（T）的数值最后面的`\1`改成`\2`（对应命名过的浏览器 如`\1=1-1`、`\2=1-2` ），再点击确定，接下来依次修改对应浏览器的属性即可。  
-![图片描述](https://github.com/absbsa/DKIP/blob/main/8.png)
+![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/8.png)
 
 6：双击鼠标左键打开各个浏览器一遍，如下图则表示多开设置成功。  
-![图片描述](https://github.com/absbsa/DKIP/blob/main/9.png)
+![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/9.png)
 
 #### 三、批量加载原配置  
 **注释**：此配置可以解决所有多开浏览器共同所需的配置（如100个浏览器共同需要一个插件、一个书签并相互独立）。  
 
 1：回到Google浏览器安装目录，双击鼠标左键打开`D：gugeduokai`文件。  
-![图片描述](https://github.com/absbsa/DKIP/blob/main/10.png)
+![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/10.png)
 
 2：`D：gugeduokai`内会看到你刚刚设置的所有多开浏览器文件夹（如看不见哪个编号则表示你没有打开过那个浏览器，回到撸毛浏览器文件夹内打开一次该编号的浏览器即可显示在`D：gugeduokai`文件夹内）。  
-![图片描述](https://github.com/absbsa/DKIP/blob/main/11.png)
+![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/11.png)
 
 需要进阶教程指导，可以联系 telegram：@kukuAPT  
 
 3：回到撸毛浏览器双击鼠标左键打开`1-1`，设置所有多开浏览器共同需要的插件、书签等内容。可使用MetaMask一套助记词批量生成100个地址，后面所有打开的浏览器可独立记忆相应编号地址，从而达到一个助记词不同浏览器操作不同地址的目的。  
-![图片描述](https://github.com/absbsa/DKIP/blob/main/12.png)
+![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/12.png)
 
 4：回到`D：gugeduokai`内，打开“1”文件夹找到`Default`，单击鼠标右键复制，然后依次将`Default`粘贴到所有编号文件夹内替换原有`Default`。  
-![图片描述](https://github.com/absbsa/DKIP/blob/main/13.png)
+![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/13.png)
 
 5：再次打开浏览器可以看到，两边的内容已经一致了，可以看右上角的插件，还有书签。  
-![图片描述](https://github.com/absbsa/DKIP/blob/main/14.png)
+![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/14.png)
 
 ### 六、独立ip配置  
 ### 一、VPN推荐：超便宜型4元/月  
@@ -103,10 +103,10 @@ telegram: @kukuAPT
 
 2：示例：  
 `C:\Program Files\Google\Chrome\Application\chrome.exe" --user-data-dir=D:\chrome\102 --proxy-server="127.0.0.1:1234"`  
-![图片描述](https://github.com/absbsa/DKIP/blob/main/15.png)
+![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/15.png)
 
 3：做完以上步骤此浏览器独立ip已实现，打开网页输入对应ip的账户密码即可使用  
-![图片描述](https://github.com/absbsa/DKIP/blob/main/16.png)
+![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/16.png)
 
 #### 六、简易方案（不懂配置可私聊）  
 如果上面所说的内容你完全不懂，但还是想实现单浏览器单ip地址的话，可以私聊  
