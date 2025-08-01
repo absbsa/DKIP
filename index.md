@@ -1,4 +1,4 @@
-批量多开Google浏览器并相互独立ip配置教程
+######批量多开Google浏览器并相互独立ip配置教程
 telegram: @kukuAPT  
 
 ### 一、VPN推荐：超便宜型4元/月  
@@ -133,8 +133,3 @@ telegram：@kukuAPT
 
 telegram：@kukuAPT  
 
-涵盖面很广的币圈实用工具汇总：  
-
-mirror.xyz  
-mirror.xyz  
-微信：uppigup  
