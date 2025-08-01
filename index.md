@@ -28,6 +28,7 @@ telegram: @kukuAPT
 
 需要进阶教程指导，可以联系 telegram：@kukuAPT  
 ![图片描述](https://github.com/absbsa/DKIP/blob/main/1.png)
+![图片描述](https://github.com/absbsa/DKIP/blob/main/2.png)
 
 #### 一、安装正版Google浏览器  
 1：安装位置最好选择C盘，以D盘示例。（所有的设置必须都安装在C盘，Chrome浏览器也要在C盘，安装在D盘没用）  
@@ -35,31 +36,40 @@ telegram: @kukuAPT
 
 #### 二、分身制作  
 1、找到你安装Google浏览器的所在目录，选择chrome，单机鼠标右键创建为快捷方式。  
+![图片描述](https://github.com/absbsa/DKIP/blob/main/3.png)
+![图片描述](https://github.com/absbsa/DKIP/blob/main/4.png)
 
 2：在D盘单独创建一个文件夹，命名为撸毛浏览器（命名是你的自由），然后复制chrome快捷方式粘贴到撸毛浏览器所在文件夹内，你需要多少个浏览器就粘贴多少个，把每个浏览器都以编号命名。  
+![图片描述](https://github.com/absbsa/DKIP/blob/main/5.png)
 
 3：鼠标右键点击“1-1”，选择属性。  
+![图片描述](https://github.com/absbsa/DKIP/blob/main/6.png)
 
 4：在**目标（T）**的数值后面输入 `--user-data-dir=D：gugeduokai\1`。  
    **意思**：用户的数据新建一个在D盘上，后面的文件夹可以是真实存在也可以是没有的，然后点击确定；  
    **注意**：`--user-data-dir` 前面是有一个空格的！  
+![图片描述](https://github.com/absbsa/DKIP/blob/main/7.png)
 
 5：将目标（T）的数值最后面的`\1`改成`\2`（对应命名过的浏览器 如`\1=1-1`、`\2=1-2` ），再点击确定，接下来依次修改对应浏览器的属性即可。  
+![图片描述](https://github.com/absbsa/DKIP/blob/main/8.png)
 
 6：双击鼠标左键打开各个浏览器一遍，如下图则表示多开设置成功。  
-
+![图片描述](https://github.com/absbsa/DKIP/blob/main/9.png)
 
 #### 三、批量加载原配置  
 **注释**：此配置可以解决所有多开浏览器共同所需的配置（如100个浏览器共同需要一个插件、一个书签并相互独立）。  
 
 1：回到Google浏览器安装目录，双击鼠标左键打开`D：gugeduokai`文件。  
+![图片描述](https://github.com/absbsa/DKIP/blob/main/10.png)
 
 2：`D：gugeduokai`内会看到你刚刚设置的所有多开浏览器文件夹（如看不见哪个编号则表示你没有打开过那个浏览器，回到撸毛浏览器文件夹内打开一次该编号的浏览器即可显示在`D：gugeduokai`文件夹内）。  
+![图片描述](https://github.com/absbsa/DKIP/blob/main/11.png)
 
 需要进阶教程指导，可以联系 telegram：@kukuAPT  
+![图片描述](https://github.com/absbsa/DKIP/blob/main/12.png)
 
 3：回到撸毛浏览器双击鼠标左键打开`1-1`，设置所有多开浏览器共同需要的插件、书签等内容。可使用MetaMask一套助记词批量生成100个地址，后面所有打开的浏览器可独立记忆相应编号地址，从而达到一个助记词不同浏览器操作不同地址的目的。  
-
+![图片描述](https://github.com/absbsa/DKIP/blob/main/13.png)
 4：回到`D：gugeduokai`内，打开“1”文件夹找到`Default`，单击鼠标右键复制，然后依次将`Default`粘贴到所有编号文件夹内替换原有`Default`。  
 
 5：再次打开浏览器可以看到，两边的内容已经一致了，可以看右上角的插件，还有书签。  
