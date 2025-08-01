@@ -27,7 +27,7 @@ telegram: @kukuAPT
 按照此教程多开后的Google浏览器可以实现相互的独立性，每个浏览器上收藏的书签、增加的拓展程序都可以实现独立性并可实现独立记忆性，完全可以实现同时操作几十个账户撸毛。  
 
 需要进阶教程指导，可以联系 telegram：@kukuAPT  
-
+![图片描述](https://github.com/absbsa/DKIP/blob/main/1.png)
 
 #### 一、安装正版Google浏览器  
 1：安装位置最好选择C盘，以D盘示例。（所有的设置必须都安装在C盘，Chrome浏览器也要在C盘，安装在D盘没用）  
