@@ -66,39 +66,30 @@ telegram: @kukuAPT
 ![图片描述](https://github.com/absbsa/DKIP/blob/main/11.png)
 
 需要进阶教程指导，可以联系 telegram：@kukuAPT  
-![图片描述](https://github.com/absbsa/DKIP/blob/main/12.png)
 
 3：回到撸毛浏览器双击鼠标左键打开`1-1`，设置所有多开浏览器共同需要的插件、书签等内容。可使用MetaMask一套助记词批量生成100个地址，后面所有打开的浏览器可独立记忆相应编号地址，从而达到一个助记词不同浏览器操作不同地址的目的。  
-![图片描述](https://github.com/absbsa/DKIP/blob/main/13.png)
+![图片描述](https://github.com/absbsa/DKIP/blob/main/12.png)
+
 4：回到`D：gugeduokai`内，打开“1”文件夹找到`Default`，单击鼠标右键复制，然后依次将`Default`粘贴到所有编号文件夹内替换原有`Default`。  
+![图片描述](https://github.com/absbsa/DKIP/blob/main/13.png)
 
 5：再次打开浏览器可以看到，两边的内容已经一致了，可以看右上角的插件，还有书签。  
-
+![图片描述](https://github.com/absbsa/DKIP/blob/main/14.png)
 
 ### 六、独立ip配置  
-#### 一、VPN推荐（同前文）  
-Mitce - Provide Online Security  
-mitce.net  
+### 一、VPN推荐：超便宜型4元/月  
+[点击这里](https://mitce.net/aff.php?aff=19005)   
 
 
-#### 二、撸毛代理IP（亲测可一拖三，同前文）  
+### 二、撸毛代理IP（亲测可一拖三）  
 优惠券：WjnbmDokhv  
 使用优惠券的用户将获得 5% 的购买折扣  
-
-Buy proxy. Personal anonymous IPv4/IPv6 proxies / PROXY6.net  
-Proxy service. Buy proxy, personal and anonymous. IPv4, IPv6 proxy. HTTPs, Socks5 proxy. Proxy for social networks  
-proxy6.net  
-
-Buy proxy. Personal anonymous IPv4/IPv6 proxies / PROXY6.net  
-Proxy service. Buy proxy, personal and anonymous. IPv4, IPv6 proxy. HTTPs, Socks5 proxy. Proxy for social networks  
-proxy6.net  
+[点击这里](https://proxy6.net/?r=454495)
+[点击这里](https://proxy6.net/a/454495)
 
 
-#### 三、撸毛代理IP（同前文）  
-Buy Proxy Servers | Fast & Affordable | Webshare  
-Buy Proxy Servers | Fast & Affordable | Webshare  
-Buy anonymous and private proxy servers. 10 proxies for FREE. Download proxy server list. HTTP Proxy SOCKS5 proxy servers. Rotat…  
-www.webshare.io  
+### 三、撸毛代理IP  超便宜
+[点击这里](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
 
 
 #### 四、更简单方案（一键部署，同前文）  
@@ -112,9 +103,10 @@ www.webshare.io
 
 2：示例：  
 `C:\Program Files\Google\Chrome\Application\chrome.exe" --user-data-dir=D:\chrome\102 --proxy-server="127.0.0.1:1234"`  
+![图片描述](https://github.com/absbsa/DKIP/blob/main/15.png)
 
 3：做完以上步骤此浏览器独立ip已实现，打开网页输入对应ip的账户密码即可使用  
-
+![图片描述](https://github.com/absbsa/DKIP/blob/main/16.png)
 
 #### 六、简易方案（不懂配置可私聊）  
 如果上面所说的内容你完全不懂，但还是想实现单浏览器单ip地址的话，可以私聊  
@@ -122,38 +114,19 @@ www.webshare.io
 telegram：@kukuAPT  
 
 
-### 七、接码平台  
-sms-activate.io  
-sms-activate.io  
-sms-man.com  
-sms-man.com  
+### 一、VPN推荐：超便宜型4元/月  
+[点击这里](https://mitce.net/aff.php?aff=19005)   
 
 
-### 八、重复内容（同前文的VPN、代理IP等，完整保留）  
-#### 一、VPN推荐：超便宜型4元/月  
-Mitce - Provide Online Security  
-mitce.net  
-
-
-#### 二、撸毛代理IP（亲测可一拖三）  
+### 二、撸毛代理IP（亲测可一拖三）  
 优惠券：WjnbmDokhv  
 使用优惠券的用户将获得 5% 的购买折扣  
-
-Buy proxy. Personal anonymous IPv4/IPv6 proxies / PROXY6.net  
-Proxy service. Buy proxy, personal and anonymous. IPv4, IPv6 proxy. HTTPs, Socks5 proxy. Proxy for social networks  
-proxy6.net  
-
-Buy proxy. Personal anonymous IPv4/IPv6 proxies / PROXY6.net  
-Proxy service. Buy proxy, personal and anonymous. IPv4, IPv6 proxy. HTTPs, Socks5 proxy. Proxy for social networks  
-proxy6.net  
+[点击这里](https://proxy6.net/?r=454495)
+[点击这里](https://proxy6.net/a/454495)
 
 
-#### 三、撸毛代理IP  
-Buy Proxy Servers | Fast & Affordable | Webshare  
-Buy Proxy Servers | Fast & Affordable | Webshare  
-Buy anonymous and private proxy servers. 10 proxies for FREE. Download proxy server list. HTTP Proxy SOCKS5 proxy servers. Rotat…  
-www.webshare.io  
-
+### 三、撸毛代理IP  超便宜
+[点击这里](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
 
 ### 九、进阶指导 & 币圈工具  
 如果你看完以上教程感到很困惑，需要进阶教程指导的话，可以联系  
