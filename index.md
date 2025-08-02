@@ -14,15 +14,19 @@
 
 TG: @kukuAPT  
 
-### 一、[mitce机场推荐：超便宜型4元/月](https://mitce.net/aff.php?aff=19005)   
-### 二、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/?r=454495)
-### 二、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/a/454495)
+## 机场推荐（两个都不错）
+### 一、[mitce机场推荐：超便宜型4元/月](https://mitce.net/aff.php?aff=19005)  
+### 二、[流量光机场推荐：超便宜型5元/月](https://llgjc1.com/#/register?code=LWEloooi) 
+
+## IP代理推荐
+### 一、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/?r=454495)
+### 一、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/a/454495)
 - 优惠券：WjnbmDokhv  
   使用优惠券将获得 5% 的购买折扣 
-### 三、[webshare撸毛代理IP  超便宜](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
-### 四、[iproyal海外开店IP  Amazon，AliExpress，TikTok YouTube养号稳定](https://iproyal.cn/?r=119367)
+### 二、[webshare撸毛代理IP  超便宜](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
+### 三、[iproyal海外开店IP  Amazon，AliExpress，TikTok YouTube养号稳定](https://iproyal.cn/?r=119367)
 
-## 币圈交易所注册
+## 币圈交易所注册（无法下载可联系TG：@kukuAPT，包下载成功）
 ### 一、[币安 邀请链接  邀请码 EU40CVEY  交易手续费返10%](https://accounts.marketwebb.systems/register?ref=EU40CVEY)
 ### 二、[bybit 邀请链接  邀请码 WAPO9NL](https://www.bybitglobal.com/invite?ref=WAPO9NL)
 ### 三、[GATE 邀请链接  邀请码 U1dHUA0N](https://www.gateweb.xyz/signup/U1dHUA0N?ref_type=103)
@@ -106,22 +110,26 @@ TG: @kukuAPT
 如果上面所说的内容你完全不懂，但还是想实现单浏览器单代理地址的话，可以私聊  
 TG：@kukuAPT  
 
-### 一、[mitce机场推荐：超便宜型4元/月](https://mitce.net/aff.php?aff=19005)   
-### 二、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/?r=454495)
-### 二、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/a/454495)
-- 优惠券：WjnbmDokhv  
-  使用优惠券将获得 5% 的购买折扣  
-### 三、[webshare撸毛代理IP  超便宜](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
-### 四、[iproyal海外开店IP  Amazon，AliExpress，TikTok YouTube养号稳定](https://iproyal.cn/?r=119367)
+## 机场推荐（两个都不错）
+### 一、[mitce机场推荐：超便宜型4元/月](https://mitce.net/aff.php?aff=19005)  
+### 二、[流量光机场推荐：超便宜型5元/月](https://llgjc1.com/#/register?code=LWEloooi) 
 
-## 币圈交易所注册
+## IP代理推荐
+### 一、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/?r=454495)
+### 一、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/a/454495)
+- 优惠券：WjnbmDokhv  
+  使用优惠券将获得 5% 的购买折扣 
+### 二、[webshare撸毛代理IP  超便宜](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
+### 三、[iproyal海外开店IP  Amazon，AliExpress，TikTok YouTube养号稳定](https://iproyal.cn/?r=119367)
+
+## 币圈交易所注册（无法下载可联系TG：@kukuAPT，包下载成功）
 ### 一、[币安 邀请链接  邀请码 EU40CVEY  交易手续费返10%](https://accounts.marketwebb.systems/register?ref=EU40CVEY)
 ### 二、[bybit 邀请链接  邀请码 WAPO9NL](https://www.bybitglobal.com/invite?ref=WAPO9NL)
 ### 三、[GATE 邀请链接  邀请码 U1dHUA0N](https://www.gateweb.xyz/signup/U1dHUA0N?ref_type=103)
 ### 四、[MEXC 抹茶邀请链接  邀请码 123J8w](https://promote.mexc.com/r/9pqNqy5e)
 ### 五、[Bitget 抹茶邀请链接  邀请码 KYHRFS9M](https://www.bitget.rocks/zh-CN/referral/register?clacCode=KYHRFS9M&from=%2Fzh-CN%2Fevents%2Freferral-all-program&source=events&utmSource=PremierInviter)
 
-### 九、接码平台
+## 九、接码平台
 ### 一、[sms-activate](https://sms-activate.io/?ref=10910560)   二、 [sms-man](https://sms-man.com/?ref=paJZm-q-idKA)
 
 ### 下载安装注册遇到问题联系
