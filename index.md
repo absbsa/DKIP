@@ -130,5 +130,5 @@ TG：@kukuAPT
 ### TG：@kukuAPT  
 
 
-机场客户端下载
-[Android](https://github.com/MetaCubeX/ClashMetaForAndroid/releases)  [iOS](https://apps.apple.com/us/app/sing-box-vt/id6673731168)   [Windows](https://github.com/clash-verge-rev/clash-verge-rev/releases)    [macOS](https://apps.apple.com/us/app/sing-box-vt/id6673731168) 
+### 机场客户端下载
+[Android](https://github.com/MetaCubeX/ClashMetaForAndroid/releases)    [iOS](https://apps.apple.com/us/app/sing-box-vt/id6673731168)     [Windows](https://github.com/clash-verge-rev/clash-verge-rev/releases)      [macOS](https://apps.apple.com/us/app/sing-box-vt/id6673731168) 
