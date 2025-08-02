@@ -123,8 +123,10 @@ TG：@kukuAPT
 [点击这里](https://www.gateweb.xyz/signup/U1dHUA0N?ref_type=103)
 ### 七、MEXC 抹茶邀请链接  邀请码 123J8w  交易手续费返10%
 [点击这里](https://promote.mexc.com/r/9pqNqy5e)
-### 七、Bitget 抹茶邀请链接  邀请码 KYHRFS9M  交易手续费返10%
+### 八、Bitget 抹茶邀请链接  邀请码 KYHRFS9M  交易手续费返10%
 [点击这里](https://www.bitget.rocks/zh-CN/referral/register?clacCode=KYHRFS9M&from=%2Fzh-CN%2Fevents%2Freferral-all-program&source=events&utmSource=PremierInviter)
+### 九、接码平台
+[平台1](https://sms-activate.io/?ref=10910560)    [平台2](https://sms-man.com/?ref=paJZm-q-idKA)
 
 ### 下载安装注册遇到问题联系
 ### TG：@kukuAPT  
