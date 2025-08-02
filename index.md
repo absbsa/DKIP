@@ -12,12 +12,10 @@
 
 对于需要长期维护数十甚至上百个账号的用户而言，谷歌浏览器多开已不仅是“功能选择”，更是构建安全运营体系的基础。它通过技术手段模拟“多设备、多环境、多网络”的真实用户场景，让平台无法通过设备指纹、网络轨迹、操作习惯等维度关联账号，从而在合规框架内实现多账号的稳定运行。在账号安全日益成为运营核心竞争力的今天，掌握浏览器多开的配置逻辑，无疑是降低风险、提升效率的关键一环。
 
-
 TG: @kukuAPT  
 
 ### 一、机场推荐：超便宜型4元/月  
 [点击这里](https://mitce.net/aff.php?aff=19005)   
-
 
 ### 二、撸毛代理（亲测可一拖三）  
 优惠券：WjnbmDokhv  
@@ -25,16 +23,13 @@ TG: @kukuAPT
 [点击这里](https://proxy6.net/?r=454495)
 [点击这里](https://proxy6.net/a/454495)
 
-
 ### 三、撸毛代理  超便宜
 [点击这里](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
-
 
 ### 四、更简单方案（一键部署）  
 # **现在有更简单的办法 一键部署 不需要在操作下面复杂的设置**  
 
 联系 TG：@kukuAPT 免费远程设置多开，数量不限  
-
 
 ### 五、批量多开Google浏览器教程  
 #### 前言：  
@@ -46,7 +41,6 @@ TG: @kukuAPT
 
 #### 一、安装正版Google浏览器  
 1：安装位置最好选择C盘，以D盘示例。（所有的设置必须都安装在C盘，Chrome浏览器也要在C盘，安装在D盘没用）  
-
 
 #### 二、分身制作  
 1、找到你安装Google浏览器的所在目录，选择chrome，单机鼠标右键创建为快捷方式。  
@@ -90,25 +84,8 @@ TG: @kukuAPT
 5：再次打开浏览器可以看到，两边的内容已经一致了，可以看右上角的插件，还有书签。  
 ![图片描述](https://raw.githubusercontent.com/absbsa/DKIP/main/14.png)
 
-### 六、独立代理配置  
-### 一、机场推荐：超便宜型4元/月  
-[点击这里](https://mitce.net/aff.php?aff=19005)   
-
-
-### 二、撸毛代理（亲测可一拖三）  
-优惠券：WjnbmDokhv  
-使用优惠券的用户将获得 5% 的购买折扣  
-[点击这里](https://proxy6.net/?r=454495)
-[点击这里](https://proxy6.net/a/454495)
-
-
-### 三、撸毛代理  超便宜
-[点击这里](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
-
-
 #### 四、更简单方案（一键部署，同前文）  
 现在有更简单的办法 一键部署 不需要在操作下面复杂的设置  
-
 
 #### 五、给Chrome配置代理  
 右键单击需要配置的浏览器打开属性，在目标（T）对话框里输入以下配置信息：  
@@ -124,20 +101,16 @@ TG: @kukuAPT
 
 #### 六、简易方案（不懂配置可私聊）  
 如果上面所说的内容你完全不懂，但还是想实现单浏览器单代理地址的话，可以私聊  
-
 TG：@kukuAPT  
-
 
 ### 一、机场推荐：超便宜型4元/月  
 [点击这里](https://mitce.net/aff.php?aff=19005)   
-
 
 ### 二、撸毛代理（亲测可一拖三）  
 优惠券：WjnbmDokhv  
 使用优惠券的用户将获得 5% 的购买折扣  
 [点击这里](https://proxy6.net/?r=454495)
 [点击这里](https://proxy6.net/a/454495)
-
 
 ### 三、撸毛代理  超便宜
 [点击这里](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
@@ -150,5 +123,12 @@ TG：@kukuAPT
 [点击这里](https://www.gateweb.xyz/signup/U1dHUA0N?ref_type=103)
 ### 七、MEXC 抹茶邀请链接  邀请码 123J8w  交易手续费返10%
 [点击这里](https://promote.mexc.com/r/9pqNqy5e)
-TG：@kukuAPT  
+### 七、Bitget 抹茶邀请链接  邀请码 KYHRFS9M  交易手续费返10%
+[点击这里](https://www.bitget.rocks/zh-CN/referral/register?clacCode=KYHRFS9M&from=%2Fzh-CN%2Fevents%2Freferral-all-program&source=events&utmSource=PremierInviter)
 
+### 下载安装注册遇到问题联系
+### TG：@kukuAPT  
+
+
+机场客户端下载
+[Android](https://github.com/MetaCubeX/ClashMetaForAndroid/releases)  [iOS](https://apps.apple.com/us/app/sing-box-vt/id6673731168)   [Windows](https://github.com/clash-verge-rev/clash-verge-rev/releases)    [macOS](https://apps.apple.com/us/app/sing-box-vt/id6673731168) 
