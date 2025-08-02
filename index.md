@@ -142,8 +142,13 @@ TG：@kukuAPT
 ### 三、撸毛代理  超便宜
 [点击这里](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
 
-### 九、进阶指导 & 币圈工具  
-如果你看完以上教程感到很困惑，需要进阶教程指导的话，可以联系  
-
+### 四、币安 邀请链接  邀请码 EU40CVEY  交易手续费返10%
+[点击这里](https://accounts.marketwebb.systems/register?ref=EU40CVEY)
+### 五、bybit 邀请链接  邀请码 WAPO9NL  交易手续费返10%
+[点击这里](https://www.bybitglobal.com/invite?ref=WAPO9NL)
+### 六、GATE 邀请链接  邀请码 U1dHUA0N  交易手续费返10%
+[点击这里](https://www.gateweb.xyz/signup/U1dHUA0N?ref_type=103)
+### 七、MEXC 抹茶邀请链接  邀请码 123J8w  交易手续费返10%
+[点击这里](https://promote.mexc.com/r/9pqNqy5e)
 TG：@kukuAPT  
 
