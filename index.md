@@ -14,17 +14,20 @@
 
 TG: @kukuAPT  
 
-### 一、机场推荐：超便宜型4元/月  
-[点击这里](https://mitce.net/aff.php?aff=19005)   
-
-### 二、撸毛代理（亲测可一拖三）  
+### 一、[mitce机场推荐：超便宜型4元/月](https://mitce.net/aff.php?aff=19005)   
+### 二、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/?r=454495)
+### 二、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/a/454495)
 优惠券：WjnbmDokhv  
-使用优惠券的用户将获得 5% 的购买折扣  
-[点击这里](https://proxy6.net/?r=454495)
-[点击这里](https://proxy6.net/a/454495)
+使用优惠券将获得 5% 的购买折扣 
+### 三、[webshare撸毛代理IP  超便宜](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
+### 四、[iproyal海外开店IP  Amazon，AliExpress，TikTok YouTube养号稳定](https://iproyal.cn/?r=119367)
 
-### 三、撸毛代理  超便宜
-[点击这里](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
+## 币圈交易所注册
+### 一、[币安 邀请链接  邀请码 EU40CVEY  交易手续费返10%](https://accounts.marketwebb.systems/register?ref=EU40CVEY)
+### 二、[bybit 邀请链接  邀请码 WAPO9NL](https://www.bybitglobal.com/invite?ref=WAPO9NL)
+### 三、[GATE 邀请链接  邀请码 U1dHUA0N](https://www.gateweb.xyz/signup/U1dHUA0N?ref_type=103)
+### 四、[MEXC 抹茶邀请链接  邀请码 123J8w](https://promote.mexc.com/r/9pqNqy5e)
+### 五、[Bitget 抹茶邀请链接  邀请码 KYHRFS9M](https://www.bitget.rocks/zh-CN/referral/register?clacCode=KYHRFS9M&from=%2Fzh-CN%2Fevents%2Freferral-all-program&source=events&utmSource=PremierInviter)
 
 ### 四、更简单方案（一键部署）  
 # **现在有更简单的办法 一键部署 不需要在操作下面复杂的设置**  
@@ -111,19 +114,15 @@ TG：@kukuAPT
 ### 三、[webshare撸毛代理IP  超便宜](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
 ### 四、[iproyal海外开店IP  Amazon，AliExpress，TikTok YouTube养号稳定](https://iproyal.cn/?r=119367)
 
-#### 币圈交易所注册
-### 四、币安 邀请链接  邀请码 EU40CVEY  交易手续费返10%
-[点击这里](https://accounts.marketwebb.systems/register?ref=EU40CVEY)
-### 五、bybit 邀请链接  邀请码 WAPO9NL  交易手续费返10%
-[点击这里](https://www.bybitglobal.com/invite?ref=WAPO9NL)
-### 六、GATE 邀请链接  邀请码 U1dHUA0N  交易手续费返10%
-[点击这里](https://www.gateweb.xyz/signup/U1dHUA0N?ref_type=103)
-### 七、MEXC 抹茶邀请链接  邀请码 123J8w  交易手续费返10%
-[点击这里](https://promote.mexc.com/r/9pqNqy5e)
-### 八、Bitget 抹茶邀请链接  邀请码 KYHRFS9M  交易手续费返10%
-[点击这里](https://www.bitget.rocks/zh-CN/referral/register?clacCode=KYHRFS9M&from=%2Fzh-CN%2Fevents%2Freferral-all-program&source=events&utmSource=PremierInviter)
+## 币圈交易所注册
+### 一、[币安 邀请链接  邀请码 EU40CVEY  交易手续费返10%](https://accounts.marketwebb.systems/register?ref=EU40CVEY)
+### 二、[bybit 邀请链接  邀请码 WAPO9NL](https://www.bybitglobal.com/invite?ref=WAPO9NL)
+### 三、[GATE 邀请链接  邀请码 U1dHUA0N](https://www.gateweb.xyz/signup/U1dHUA0N?ref_type=103)
+### 四、[MEXC 抹茶邀请链接  邀请码 123J8w](https://promote.mexc.com/r/9pqNqy5e)
+### 五、[Bitget 抹茶邀请链接  邀请码 KYHRFS9M](https://www.bitget.rocks/zh-CN/referral/register?clacCode=KYHRFS9M&from=%2Fzh-CN%2Fevents%2Freferral-all-program&source=events&utmSource=PremierInviter)
+
 ### 九、接码平台
-[平台1](https://sms-activate.io/?ref=10910560)    [平台2](https://sms-man.com/?ref=paJZm-q-idKA)
+### 一、[sms-activate](https://sms-activate.io/?ref=10910560)   二、 [sms-man](https://sms-man.com/?ref=paJZm-q-idKA)
 
 ### 下载安装注册遇到问题联系
 ### TG：@kukuAPT  
