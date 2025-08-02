@@ -115,6 +115,10 @@ TG：@kukuAPT
 ### 三、撸毛代理  超便宜
 [点击这里](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
 
+### 四、海外开店，TK YT养号稳定
+[点击这里](https://iproyal.cn/?r=119367)
+
+#### 币圈交易所注册
 ### 四、币安 邀请链接  邀请码 EU40CVEY  交易手续费返10%
 [点击这里](https://accounts.marketwebb.systems/register?ref=EU40CVEY)
 ### 五、bybit 邀请链接  邀请码 WAPO9NL  交易手续费返10%
