@@ -26,7 +26,7 @@ TG: @kukuAPT
 - 优惠券：WjnbmDokhv  
   使用优惠券将获得 5% 的购买折扣
   
-### 三、[webshare撸毛代理IP  超便宜服务器IP 2毛/条](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
+### 三、[webshare撸毛代理IP  超便宜](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
 ### 四、[iproyal海外开店IP  Amazon，AliExpress，TikTok YouTube养号稳定](https://iproyal.cn/?r=119367)
 
 ## 币圈交易所注册（无法下载可联系TG：@kukuAPT，包下载成功）
@@ -125,7 +125,7 @@ TG：@kukuAPT
 - 优惠券：WjnbmDokhv  
   使用优惠券将获得 5% 的购买折扣
   
-### 三、[webshare撸毛代理IP  超便宜服务器IP 2毛/条](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
+### 三、[webshare撸毛代理IP  超便宜](https://www.webshare.io/?referral_code=8nsq1kjzom8f)
 ### 四、[iproyal海外开店IP  Amazon，AliExpress，TikTok YouTube养号稳定](https://iproyal.cn/?r=119367)
 
 ## 币圈交易所注册（无法下载可联系TG：@kukuAPT，包下载成功）
