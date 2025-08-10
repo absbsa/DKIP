@@ -17,8 +17,8 @@ TG: @kukuAPT
 ## [撸空投三件套四件套](http://web3serve.com?from=12527)  
 
 ## 机场推荐（两个都不错）
-### 一、[mitce机场推荐：超便宜型4元/月](https://mitce.net/aff.php?aff=19005)  
-### 二、[流量光机场推荐：超便宜型5元/月](https://llgjc1.com/#/register?code=LWEloooi) 
+### 一、[mitce机场推荐：超便宜型4元/月100G](https://mitce.net/aff.php?aff=19005)  
+### 二、[流量光机场推荐：超便宜型5元/月150G](https://llgjc1.com/#/register?code=LWEloooi) 
 
 ## IP代理推荐
 ### 一、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/?r=454495)
@@ -116,8 +116,8 @@ TG：@kukuAPT
 ## [撸空投三件套四件套](http://web3serve.com?from=12527) 
 
 ## 机场推荐（两个都不错）
-### 一、[mitce机场推荐：超便宜型4元/月](https://mitce.net/aff.php?aff=19005)  
-### 二、[流量光机场推荐：超便宜型5元/月](https://llgjc1.com/#/register?code=LWEloooi) 
+### 一、[mitce机场推荐：超便宜型4元/月100G](https://mitce.net/aff.php?aff=19005)  
+### 二、[流量光机场推荐：超便宜型5元/月150G](https://llgjc1.com/#/register?code=LWEloooi) 
 
 ## IP代理推荐
 ### 一、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/?r=454495)
