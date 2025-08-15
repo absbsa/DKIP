@@ -14,7 +14,7 @@
 
 TG: @kukuAPT  
 
-## [撸空投三件套四件套,Gmail0.9元1/个，twitter0.4元/个，telegram3.5元/个](https://accsmarket.com/en/?ref=793694   https://accsmarket.com/en/GSV2yOiI)  
+## [撸空投三件套四件套,Gmail0.9元1/个，twitter0.4元/个，telegram3.5元/个](https://accsmarket.com/en/?ref=793694)  
 
 ## 机场推荐（两个都不错）
 ### 一、[mitce机场推荐：超便宜型4元/月100G](https://mitce.net/aff.php?aff=19005)  
@@ -113,7 +113,7 @@ TG: @kukuAPT
 如果上面所说的内容你完全不懂，但还是想实现单浏览器单代理地址的话，可以私聊  
 TG：@kukuAPT  
 
-## [撸空投三件套四件套](http://web3serve.com?from=12527) 
+## [撸空投三件套四件套,Gmail0.9元1/个，twitter0.4元/个，telegram3.5元/个](https://accsmarket.com/en/?ref=793694)  
 
 ## 机场推荐（两个都不错）
 ### 一、[mitce机场推荐：超便宜型4元/月100G](https://mitce.net/aff.php?aff=19005)  
