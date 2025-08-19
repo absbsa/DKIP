@@ -5,13 +5,13 @@
   <title>Video with Twitter Tracking</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   
-  <!-- Google Analytics (GA4) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-你的GA4ID"></script>
+  <!-- Google Analytics (GA4) - 已填入你的测量ID -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-X0ZSRRF93P"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-你的GA4ID');
+    gtag('config', 'G-X0ZSRRF93P'); // 已替换为你的实际GA4 ID
   </script>
 
   <style>
@@ -71,6 +71,11 @@
       background: #222;
       border-radius: 10px;
     }
+    .form-note {
+      font-size: 14px;
+      color: #aaa;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -88,6 +93,7 @@
     <!-- Twitter句柄输入表单 -->
     <div class="twitter-form" id="twitterForm">
       <h2>请输入你的Twitter句柄（不含@）</h2>
+      <p class="form-note">（用于统计抽奖，请勿乱填）</p>
       <input type="text" id="twitterHandle" placeholder="例如：elonmusk" required>
       <button onclick="verifyTwitter()">开始观看</button>
     </div>
@@ -162,3 +168,4 @@
   </script>
 </body>
 </html>
+    
