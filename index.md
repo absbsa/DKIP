@@ -141,19 +141,20 @@ TG：@kukuAPT
 ### 一、 [美国警察处理侵占别人房屋的人](https://mivalyo.com/embed/30620q5pjrvy)   
 ### 二、 [聚合器项目YUPP](https://mivalyo.com/embed/82hst0eq1rp6)
 
-
-<html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
   <meta charset="UTF-8">
   <title>Video with Twitter Tracking</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   
   <!-- Google Analytics (GA4) -->
-  <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-XXXXXXX');  // 替换为你的GA4 ID
+    gtag('config', 'G-XXXXXXX'); // 替换为你的 GA4 ID
   </script>
 
   <style>
@@ -216,26 +217,26 @@ TG：@kukuAPT
 </head>
 <body>
   <div class="container">
-    <!-- 视频选择器（支持多视频） -->
+    <!-- 视频选择器（修复为下拉菜单） -->
     <div class="video-selector">
       <h3>选择视频</h3>
       <select id="videoSelector">
         <option value="https://mivalyo.com/embed/30620q5pjrvy" data-id="video1">视频 1</option>
-        <option value="https://mivalyo.com/embed/other-video-id" data-id="video2">视频 2</option>
-        <option value="https://mivalyo.com/embed/another-id" data-id="video3">视频 3</option>
+        <option value="https://mivalyo.com/embed/second-video-id" data-id="video2">视频 2</option>
+        <option value="https://mivalyo.com/embed/third-video-id" data-id="video3">视频 3</option>
       </select>
     </div>
 
     <!-- Twitter句柄输入表单 -->
     <div class="twitter-form" id="twitterForm">
       <h2>请输入你的Twitter句柄（不含@）</h2>
-      <input type="text" id="twitterHandle" placeholder="例如：elonmusk" required="">
+      <input type="text" id="twitterHandle" placeholder="例如：elonmusk" required>
       <button onclick="verifyTwitter()">开始观看</button>
     </div>
 
     <!-- 视频容器 -->
     <div class="video-container" id="videoContainer">
-      <iframe id="videoFrame" allowfullscreen=""></iframe>
+      <iframe id="videoFrame" allowfullscreen></iframe>
     </div>
   </div>
 
@@ -268,7 +269,7 @@ TG：@kukuAPT
       document.getElementById('videoFrame').src = currentVideoUrl;
       startTracking();
 
-      // 上报"开始观看"事件（含Twitter句柄）
+      // 上报"开始观看"事件
       gtag('event', 'video_start', {
         'event_category': 'video',
         'event_label': currentVideoId,
@@ -309,6 +310,5 @@ TG：@kukuAPT
       clearInterval(timer);
     });
   </script>
-
-
-    </body></html>
+</body>
+</html>
