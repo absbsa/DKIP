@@ -1,3 +1,8 @@
+### ## 视频观看页面
+点击查看视频页面：[观看满60秒即可参与抽奖](video.html) 
+
+
+
 # **批量多开Google浏览器并相互独立代理配置教程** 
 
 在多账号并行操作的场景中，使用谷歌浏览器多开功能绝非简单的“便捷工具”，而是保障账号体系安全的核心技术手段。无论是跨境电商运营、社交媒体矩阵管理，还是区块链资产维护等场景，多账号关联导致的封号、限权风险始终是从业者的最大痛点，而谷歌浏览器多开通过底层技术层面的环境隔离，为这一问题提供了系统性解决方案。
@@ -138,7 +143,6 @@ TG：@kukuAPT
 [Android](https://github.com/MetaCubeX/ClashMetaForAndroid/releases)        [iOS](https://apps.apple.com/us/app/sing-box-vt/id6673731168)         [Windows](https://github.com/clash-verge-rev/clash-verge-rev/releases)          [macOS](https://apps.apple.com/us/app/sing-box-vt/id6673731168) 
 
 
-### ## 视频跟踪页面
-点击查看带Twitter句柄验证的视频页面：[视频跟踪页面](video.html) 
+
 
 
