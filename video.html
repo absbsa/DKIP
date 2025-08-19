@@ -76,6 +76,11 @@
       color: #aaa;
       margin-top: 10px;
     }
+    .rule-note {
+      font-size: 14px;
+      color: #ffd700;
+      margin-top: 5px;
+    }
     .limit-alert {
       color: red;
       margin-top: 10px;
@@ -94,7 +99,7 @@
     <div class="video-selector">
       <h3>选择视频</h3>
       <select id="videoSelector">
-        <option value="https://mivalyo.com/embed/30620q5pjrvy" data-id="video1">视频 1</option>
+        <option value="https://mivalyo.com/embed/pfcrs1z71c7z" data-id="video1">视频 1</option>
         <option value="https://mivalyo.com/embed/second-video-id" data-id="video2">视频 2</option>
         <option value="https://mivalyo.com/embed/third-video-id" data-id="video3">视频 3</option>
       </select>
@@ -104,6 +109,7 @@
     <div class="twitter-form" id="twitterForm">
       <h2>请输入你的Twitter句柄（不含@）</h2>
       <p class="form-note">（用于统计抽奖，请勿乱填）</p>
+      <p class="rule-note">长于 5 分钟的视频，至少需要观看 10% 的时间</p>
       <p class="limit-alert" id="limitAlert">同一IP 24小时内只能观看2次，已达上限</p>
       <input type="text" id="twitterHandle" placeholder="例如：elonmusk" required>
       <button onclick="verifyTwitter()">开始观看</button>
@@ -111,7 +117,7 @@
 
     <!-- 视频容器 -->
     <div class="video-container" id="videoContainer">
-      <p class="duration-alert" id="durationAlert">观看满60秒即可参与抽奖</p>
+      <p class="duration-alert" id="durationAlert">观看满要求时长即可参与抽奖</p>
       <iframe id="videoFrame" allowfullscreen></iframe>
     </div>
   </div>
@@ -124,11 +130,13 @@
     let currentVideoId = '';
     let currentVideoUrl = '';
     let userIp = '';
-    let isQualified = false; // 标记是否达到有效时长（≥60秒）
+    let isQualified = false; // 标记是否达到有效时长
+    let videoTotalSeconds = 0; // 视频总时长（秒）
     const IP_WATCH_KEY = 'ipWatchCount';
     const MAX_WATCH_TIMES = 2;
     const EXPIRY_HOURS = 24;
-    const QUALIFIED_DURATION = 60; // 有效参与时长（秒）
+    const LONG_VIDEO_THRESHOLD = 300; // 5分钟（300秒），超过此值视为长视频
+    const LONG_VIDEO_REQUIRED_RATIO = 0.1; // 长视频需观看10%
 
     // 获取用户IP（使用免费API）
     async function getIp() {
@@ -148,7 +156,7 @@
       const ipDataStr = localStorage.getItem(IP_WATCH_KEY) || '{}';
       let ipData = JSON.parse(ipDataStr);
 
-      // 清理过期数据（仅用于次数限制，不影响GA4长期数据）
+      // 清理过期数据
       Object.keys(ipData).forEach(ip => {
         const records = ipData[ip].filter(record => {
           return (now - record.timestamp) < EXPIRY_HOURS * 60 * 60 * 1000;
@@ -167,7 +175,7 @@
       return ipRecords.length < MAX_WATCH_TIMES;
     }
 
-    // 记录IP观看次数（仅用于限制，不存储用户数据）
+    // 记录IP观看次数
     function recordIpWatch() {
       const now = new Date().getTime();
       const ipDataStr = localStorage.getItem(IP_WATCH_KEY) || '{}';
@@ -194,6 +202,18 @@
       localStorage.setItem(IP_WATCH_KEY, JSON.stringify(ipData));
     }
 
+    // 检查是否达到合格时长
+    function checkQualified() {
+      if (videoTotalSeconds === 0) return false; // 未获取到视频时长时暂不判断
+      
+      // 长视频（>5分钟）需观看10%，短视频默认60秒合格
+      const requiredSeconds = videoTotalSeconds > LONG_VIDEO_THRESHOLD 
+        ? videoTotalSeconds * LONG_VIDEO_REQUIRED_RATIO 
+        : 60;
+      
+      return watchSeconds >= Math.ceil(requiredSeconds);
+    }
+
     async function verifyTwitter() {
       userIp = await getIp();
       const canWatch = checkIpWatchTimes();
@@ -216,19 +236,30 @@
 
       document.getElementById('twitterForm').style.display = 'none';
       document.getElementById('videoContainer').style.display = 'block';
-      document.getElementById('videoFrame').src = currentVideoUrl;
-      startTracking();
+      const videoFrame = document.getElementById('videoFrame');
+      videoFrame.src = currentVideoUrl;
+      
+      // 尝试获取视频时长（需视频加载完成后）
+      videoFrame.onloadedmetadata = function() {
+        // 部分视频平台可能因跨域限制无法获取时长，此处做兼容处理
+        try {
+          videoTotalSeconds = Math.floor(videoFrame.duration);
+        } catch (e) {
+          console.log('无法获取视频时长，将使用默认规则');
+          videoTotalSeconds = 0;
+        }
+      };
 
-      // 记录此次观看（次数限制用）
+      startTracking();
       recordIpWatch();
 
-      // 上报开始事件（包含完整信息，用于长期查询）
+      // 上报开始事件
       gtag('event', 'video_start', {
         'event_category': 'video',
         'event_label': currentVideoId,
         'twitter_handle': currentTwitterHandle,
         'video_url': currentVideoUrl,
-        'ip': userIp // 可选：用于辅助分析，但GA4会自动收集IP相关地域信息
+        'ip': userIp
       });
     }
 
@@ -238,20 +269,21 @@
       timer = setInterval(() => {
         watchSeconds++;
         
-        // 达到有效时长时单独上报一次"合格"事件
-        if (watchSeconds === QUALIFIED_DURATION && !isQualified) {
+        // 达到合格条件时上报
+        if (!isQualified && checkQualified()) {
           isQualified = true;
           document.getElementById('durationAlert').style.display = 'block';
-          gtag('event', 'video_qualified', { // 新增：明确标记合格用户
+          gtag('event', 'video_qualified', {
             'event_category': 'video',
             'event_label': currentVideoId,
             'twitter_handle': currentTwitterHandle,
             'value': watchSeconds,
-            'video_url': currentVideoUrl
+            'video_url': currentVideoUrl,
+            'video_total_seconds': videoTotalSeconds
           });
         }
 
-        // 每10秒上报进度（确保时长数据完整）
+        // 每10秒上报进度
         if (watchSeconds % 10 === 0) {
           gtag('event', 'video_progress', {
             'event_category': 'video',
@@ -266,14 +298,14 @@
 
     window.addEventListener("beforeunload", () => {
       if (currentTwitterHandle) {
-        // 上报最终事件，明确标记是否合格
         gtag('event', 'video_end', {
           'event_category': 'video',
           'event_label': currentVideoId,
           'twitter_handle': currentTwitterHandle,
           'value': watchSeconds,
           'video_url': currentVideoUrl,
-          'is_qualified': watchSeconds >= QUALIFIED_DURATION // 新增：是否达到60秒
+          'is_qualified': isQualified,
+          'video_total_seconds': videoTotalSeconds
         });
       }
       clearInterval(timer);
