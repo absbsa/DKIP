@@ -1,5 +1,5 @@
 # 视频观看页面
-# 点击查看视频页面：[观看满60秒即可参与抽奖](video.html) 
+# 点击此处页面查看视频：[观看满60秒即可参与抽奖](video.html) 
 
 
 
@@ -17,7 +17,6 @@ TG: @kukuAPT
 
 ## IP代理推荐
 ### 一、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/?r=454495)
-### 二、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/a/454495)
 - 优惠券：WjnbmDokhv  
   使用优惠券将获得 5% 的购买折扣
   
@@ -116,7 +115,6 @@ TG：@kukuAPT
 
 ## IP代理推荐
 ### 一、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/?r=454495)
-### 二、[proxy6撸毛代理IP（亲测可一拖三）](https://proxy6.net/a/454495)
 - 优惠券：WjnbmDokhv  
   使用优惠券将获得 5% 的购买折扣
   
