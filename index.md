@@ -138,6 +138,7 @@ TG：@kukuAPT
 [Android](https://github.com/MetaCubeX/ClashMetaForAndroid/releases)        [iOS](https://apps.apple.com/us/app/sing-box-vt/id6673731168)         [Windows](https://github.com/clash-verge-rev/clash-verge-rev/releases)          [macOS](https://apps.apple.com/us/app/sing-box-vt/id6673731168) 
 
 
-### 一、 [美国警察处理侵占别人房屋的人](https://mivalyo.com/embed/30620q5pjrvy)   
-### 二、 [聚合器项目YUPP](https://mivalyo.com/embed/82hst0eq1rp6)
+### ## 视频跟踪页面
+点击查看带Twitter句柄验证的视频页面：[视频跟踪页面](video.html) 
+
 
