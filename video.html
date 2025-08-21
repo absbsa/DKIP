@@ -91,13 +91,14 @@
       margin-top: 30px;
     }
 
-    video {
+    iframe {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       display: none;
+      border: none;
       border-radius: 8px;
     }
   </style>
@@ -122,22 +123,20 @@
     <div class="ip-alert" id="ipAlert"></div>
     <!-- 自适应视频容器 -->
     <div class="video-wrapper">
-      <video id="videoPlayer" controls>
-        <source src="" type="video/mp4">
-      </video>
+      <iframe id="videoFrame"></iframe>
     </div>
   </div>
 
   <script>
-    // 核心变量（极简可靠逻辑）
+    // 核心变量
     let timer = null;       // 计时定时器
     let watchSeconds = 0;   // 已观看时长
     let isTracking = false; // 是否计时中
     let useCount = 0;       // 24小时内使用次数
-    const video = document.getElementById('videoPlayer');
+    const iframe = document.getElementById('videoFrame');
     const selector = document.getElementById('videoSelector');
 
-    // 轻量IP获取（国内优先）
+    // 获取IP
     async function getIp() {
       try {
         const res = await fetch('https://api.ipify.org?format=json');
@@ -147,11 +146,12 @@
       }
     }
 
-    // 次数管理（本地存储+每日重置）
+    // 次数管理
     function checkUseCount() {
       const data = localStorage.getItem('videoTaskUseCount') || '{"count":0,"reset":0}';
       const { count, reset } = JSON.parse(data);
       const now = Date.now();
+      // 超过24小时重置计数
       if (now - reset > 24 * 60 * 60 * 1000) {
         localStorage.setItem('videoTaskUseCount', JSON.stringify({ count: 0, reset: now }));
         return 0;
@@ -167,7 +167,7 @@
       return newCount;
     }
 
-    // 启动任务（完整流程）
+    // 启动任务
     async function startTask() {
       // 1. 校验视频选择
       const videoUrl = selector.value;
@@ -182,31 +182,34 @@
 
       // 3. 初始化视频加载
       document.getElementById('statusText').innerText = '视频加载中...';
-      video.style.display = 'block';
-      video.querySelector('source').src = videoUrl;
-      video.load(); // 强制加载
+      iframe.style.display = 'block';
+      iframe.src = videoUrl;
 
-      // 4. 绑定播放事件（自动重试加载）
-      video.addEventListener('canplay', () => {
-        document.getElementById('statusText').innerText = '点击播放按钮开始计时';
-      });
-      video.addEventListener('error', () => {
-        document.getElementById('statusText').innerText = '视频加载失败，重试中...';
-        video.load(); // 加载失败自动重试
-      });
-      video.addEventListener('play', startTimer);
+      // 4. 监听iframe加载状态
+      iframe.onload = function() {
+        document.getElementById('statusText').innerText = '视频加载完成，请点击播放开始计时';
+        startTimer(); // 加载完成后自动开始计时
+      };
+
+      // 处理加载错误
+      iframe.onerror = function() {
+        document.getElementById('statusText').innerText = '视频加载失败，请重试';
+      };
     }
 
-    // 播放后启动计时（严格120秒）
+    // 播放后启动计时
     function startTimer() {
       if (isTracking) return;
       isTracking = true;
       // 更新使用次数
       useCount = updateUseCount();
       document.getElementById('ipAlert').innerText = `这是24小时内第${useCount}次使用`;
-      document.getElementById('statusText').innerText = '正在计时...';
+      document.getElementById('statusText').innerText = '正在计时...（已观看：0秒）';
+      
       timer = setInterval(() => {
         watchSeconds++;
+        document.getElementById('statusText').innerText = `正在计时...（已观看：${watchSeconds}秒）`;
+        
         if (watchSeconds >= 120) {
           clearInterval(timer);
           document.getElementById('statusText').innerText = '已达标！累计观看120秒';
@@ -217,7 +220,6 @@
     // 页面关闭清理
     window.addEventListener('beforeunload', () => {
       clearInterval(timer);
-      console.log(`观看记录：${watchSeconds}秒（达标：${watchSeconds >= 120}）`);
     });
 
     // 初始化次数检查
