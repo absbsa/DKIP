@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Video Tracking</title>
+  <title>Video Tracking with Earnvids API</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   
   <!-- Google Analytics (GA4) -->
@@ -15,296 +15,170 @@
   </script>
 
   <style>
-    .video-container { position: relative; }
-    .interaction-hint {
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7); color: white;
-      display: flex; align-items: center; justify-content: center;
-      z-index: 10; cursor: pointer;
-      font-size: 16px;
-    }
-    body { margin: 0; padding: 20px; min-height: 100vh; background: #111; color: white; font-family: Arial, sans-serif; }
+    body { background: #111; color: white; font-family: Arial, sans-serif; padding: 20px; }
     .container { max-width: 1200px; margin: 0 auto; }
-    .video-container { width: 100%; height: 70vh; margin-top: 20px; display: none; }
-    iframe { width: 100%; height: 100%; border: none; }
-    .video-selector { margin: 20px 0; padding: 20px; background: #222; border-radius: 10px; text-align: center; }
-    button { padding: 12px 24px; background: #1DA1F2; color: white; border: none; border-radius: 30px; font-size: 16px; cursor: pointer; margin-top: 10px; }
-    button:hover { background: #0d8bd9; }
-    .rule-note { font-size: 14px; color: #ffd700; margin-top: 5px; line-height: 1.6; white-space: pre-line; }
-    .duration-alert { color: #4CAF50; margin-top: 10px; display: none; }
-    .progress-display { color: #fff; margin-top: 10px; font-size: 14px; }
-    .video-history { margin-top: 15px; padding: 10px; background: #333; border-radius: 5px; font-size: 13px; text-align: left; }
-    .ip-reminder { color: #ff9800; margin-top: 10px; font-size: 14px; display: none; }
-    .ip-limit-alert { color: #ff4444; margin-top: 10px; font-size: 14px; display: none; }
-    .manual-start提示 { color: #ff4444; margin-top: 10px; font-size: 14px; }
+    .video-selector { background: #222; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0; }
+    .video-container { width: 100%; height: 70vh; margin-top: 20px; }
+    video { width: 100%; height: 100%; background: #000; }
+    button { padding: 12px 24px; background: #1DA1F2; color: white; border: none; border-radius: 30px; cursor: pointer; margin: 10px; }
+    .progress { margin: 10px 0; font-size: 16px; }
+    .history { background: #333; padding: 10px; border-radius: 5px; text-align: left; margin-top: 15px; }
+    .alert { color: #4CAF50; font-weight: bold; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="video-selector">
-      <h3>选择视频</h3>
+      <h3>选择视频（通过 Earnvids API 加载）</h3>
       <select id="videoSelector">
-        <option value="https://mivalyo.com/embed/6suaa9gg9y7y" data-id="video1">黄霄雲 1</option>
-        <option value="https://mivalyo.com/embed/649eym1t2485" data-id="video2">黄霄雲 2</option>
-        <option value="https://mivalyo.com/embed/third-video-id" data-id="video3">视频 3</option>
+        <option value="fb5asfuj2snh">视频 1（file_code: fb5asfuj2snh）</option>
+        <option value="u9150wqzvhxj">视频 2（file_code: u9150wqzvhxj）</option>
       </select>
-      <p class="rule-note">点击视频区域后自动开始计时（若未自动开始，点击"手动开始计时"）<br>
-        每个视频观看满 120 秒才算合格</p>
-      <button onclick="startWatching()">开始观看</button>
-      <button onclick="manualStartTracking()" style="background:#ff4444; margin-left:10px;">手动强制开始计时</button>
-      <p class="ip-reminder" id="ipReminder"></p>
-      <p class="ip-limit-alert" id="ipLimitAlert"></p>
-      <div class="video-history" id="videoHistory">观看记录：暂无</div>
+      <p>请先获取视频播放链接并开始播放</p>
+      <button onclick="loadVideo()">加载视频</button>
+      <div class="progress">
+        已观看: <span id="watchTime">0</span>秒 / 需观看: 120秒
+        <div id="qualifiedAlert" class="alert" style="display: none;">已达到有效观看时长！</div>
+      </div>
+      <div class="history" id="history">观看记录：暂无</div>
     </div>
-
-    <div class="video-container" id="videoContainer">
-      <div class="interaction-hint" id="interactionHint">点击视频区域开始播放（自动计时）</div>
-      <p class="progress-display" id="progressDisplay">等待视频播放中...</p>
-      <p class="duration-alert" id="durationAlert">已达到有效观看时长（120秒）</p>
-      <p class="manual-start提示" id="manualHint" style="display:block;">
-        若未自动计时，请点击"手动强制开始计时"
-      </p>
-      <iframe id="videoFrame" allowfullscreen></iframe>
+    <div class="video-container">
+      <video id="videoPlayer" controls>你的浏览器不支持 HTML5 视频</video>
     </div>
   </div>
 
   <script>
+    // 配置 API 密钥（替换为你的 key）
+    const API_KEY = "4263429idtqricctunz8";
+    const REQUIRED_SECONDS = 120; // 有效观看时长
+    let currentFileCode = "";
+    let watchSeconds = 0;
     let timer = null;
-    let currentVideoId = '';
-    let currentVideoUrl = '';
-    let userIp = '';
-    let isVideoPlaying = false;
-    let isWithinLimit = true;
-    let userInteracted = false;
-    const REQUIRED_SECONDS = 120;
-    const IP_USAGE_KEY = 'ipDailyUsageCount';
-    const DAILY_LIMIT = 2;
     let videoRecords = {};
+    let userIp = ""; // 后续可通过 ipify 获取
 
-    // 获取IP（不变）
+    // 获取用户 IP（用于 API 验证）
     async function getIp() {
       try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
         return data.ip;
-      } catch (error) {
-        console.error('获取IP失败:', error);
-        return 'unknown-ip';
+      } catch (err) {
+        console.error("获取 IP 失败:", err);
+        return "127.0.0.1"; //  fallback
       }
     }
 
-    // IP次数管理（不变）
-    function checkAndResetDailyCount(ipData) {
-      const now = new Date().getTime();
-      const oneDay = 24 * 60 * 60 * 1000;
-      if (!ipData.lastReset || now - ipData.lastReset > oneDay) {
-        ipData.count = 0;
-        ipData.lastReset = now;
-      }
-      return ipData;
-    }
-
-    function getIpUsageCount() {
-      const now = new Date().getTime();
-      const ipDataStr = localStorage.getItem(IP_USAGE_KEY) || '{}';
-      let ipData = JSON.parse(ipDataStr);
-      if (!ipData[userIp]) {
-        ipData[userIp] = { count: 0, lastReset: now };
-      }
-      ipData[userIp] = checkAndResetDailyCount(ipData[userIp]);
-      localStorage.setItem(IP_USAGE_KEY, JSON.stringify(ipData));
-      return ipData[userIp].count;
-    }
-
-    function incrementIpUsage() {
-      const now = new Date().getTime();
-      const ipDataStr = localStorage.getItem(IP_USAGE_KEY) || '{}';
-      let ipData = JSON.parse(ipDataStr);
-      if (!ipData[userIp]) {
-        ipData[userIp] = { count: 0, lastReset: now };
-      }
-      ipData[userIp] = checkAndResetDailyCount(ipData[userIp]);
-      ipData[userIp].count++;
-      localStorage.setItem(IP_USAGE_KEY, JSON.stringify(ipData));
-      const currentCount = ipData[userIp].count;
-      isWithinLimit = currentCount <= DAILY_LIMIT;
-      const reminderEl = document.getElementById('ipReminder');
-      const limitAlertEl = document.getElementById('ipLimitAlert');
-      if (currentCount <= DAILY_LIMIT) {
-        reminderEl.textContent = `24小时内此IP可使用${DAILY_LIMIT}次，已使用${currentCount}次`;
-        reminderEl.style.display = 'block';
-        limitAlertEl.style.display = 'none';
-      } else {
-        limitAlertEl.textContent = `24小时内此IP只能使用${DAILY_LIMIT}次，已使用${currentCount}次，不计入有效`;
-        limitAlertEl.style.display = 'block';
-        reminderEl.style.display = 'none';
-      }
-    }
-
-    // 合格判断（不变）
-    function checkQualified(videoId) {
-      return isWithinLimit && videoRecords[videoId].watchSeconds >= REQUIRED_SECONDS;
-    }
-
-    // 彻底简化自动检测：用户点击后，只要视频区域有任何活动就计时
-    function startAutoTracking() {
-      if (isVideoPlaying) return;
-      isVideoPlaying = true;
-      startTracking();
-      document.getElementById('manualHint').style.display = 'none';
-      console.log('已启动自动计时');
-    }
-
-    // 手动计时（强制启动，不依赖检测）
-    function manualStartTracking() {
-      userInteracted = true;
-      document.getElementById('interactionHint').style.display = 'none';
-      isVideoPlaying = true;
-      startTracking();
-      document.getElementById('manualHint').style.display = 'none';
-      alert(isWithinLimit ? '已强制开始计时' : '已强制开始计时（不计入有效）');
-    }
-
-    // 加载视频（不变）
-    async function loadSelectedVideo() {
-      if (timer) clearInterval(timer);
-      isVideoPlaying = false;
-      userInteracted = false;
-      document.getElementById('interactionHint').style.display = 'flex';
-      document.getElementById('manualHint').style.display = 'block';
-
-      const selector = document.getElementById('videoSelector');
-      currentVideoUrl = selector.value;
-      currentVideoId = selector.options[selector.selectedIndex].dataset.id;
-      const videoName = selector.options[selector.selectedIndex].text;
-
-      if (!videoRecords[currentVideoId]) {
-        videoRecords[currentVideoId] = {
-          name: videoName,
-          watchSeconds: 0,
-          isQualified: false,
-          isEffective: true
-        };
-      }
-      videoRecords[currentVideoId].isEffective = isWithinLimit;
-
-      const videoFrame = document.getElementById('videoFrame');
-      videoFrame.src = currentVideoUrl;
-
-      document.getElementById('progressDisplay').textContent = "等待视频播放中...";
-      document.getElementById('durationAlert').style.display = 'none';
-      updateHistoryDisplay();
-
-      gtag('event', 'video_switch', {
-        'event_category': 'video',
-        'event_label': currentVideoId,
-        'video_url': currentVideoUrl,
-        'ip': userIp,
-        'previous_watch_seconds': videoRecords[currentVideoId].watchSeconds,
-        'ip_usage_count': getIpUsageCount(),
-        'is_within_limit': isWithinLimit
-      });
-    }
-
-    // 更新显示（不变）
-    function updateProgressDisplay() {
-      if (!isVideoPlaying) return;
-      const record = videoRecords[currentVideoId];
-      let progressText = `已观看: ${record.watchSeconds}秒 / 需观看: 120秒`;
-      if (!isWithinLimit) progressText += '（本次观看不计入有效）';
-      document.getElementById('progressDisplay').textContent = progressText;
-      document.getElementById('durationAlert').style.display = record.isQualified ? 'block' : 'none';
-    }
-
-    function updateHistoryDisplay() {
-      let historyHtml = '观看记录：';
-      let hasRecords = false;
-      Object.values(videoRecords).forEach(record => {
-        hasRecords = true;
-        let status = record.isQualified ? '✅ 已合格' : `⏱️ 已看${record.watchSeconds}秒`;
-        if (!record.isEffective) status += '（不计入有效）';
-        historyHtml += `<br>${record.name}: ${status}`;
-      });
-      if (!hasRecords) historyHtml += '暂无';
-      document.getElementById('videoHistory').innerHTML = historyHtml;
-    }
-
-    // 开始观看（不变）
-    async function startWatching() {
+    // 1. 加载视频：通过 API 获取直接播放链接
+    async function loadVideo() {
+      currentFileCode = document.getElementById("videoSelector").value;
       userIp = await getIp();
-      incrementIpUsage();
-      document.getElementById('videoContainer').style.display = 'block';
-      await loadSelectedVideo();
-      gtag('event', 'video_start', {
-        'event_category': 'video',
-        'event_label': currentVideoId,
-        'video_url': currentVideoUrl,
-        'ip': userIp,
-        'previous_watch_seconds': videoRecords[currentVideoId].watchSeconds,
-        'ip_usage_count': getIpUsageCount(),
-        'is_within_limit': isWithinLimit
-      });
+
+      // 重置状态
+      stopTracking();
+      watchSeconds = 0;
+      document.getElementById("watchTime").textContent = "0";
+      document.getElementById("qualifiedAlert").style.display = "none";
+
+      // 调用 API 获取视频直接播放链接（file/direct_link）
+      try {
+        const directLinkRes = await fetch(
+          `https://earnvidsapi.com/api/file/direct_link?key=${API_KEY}&file_code=${currentFileCode}&ip=${userIp}`
+        );
+        const directLinkData = await directLinkRes.json();
+        if (directLinkData.status !== 200) {
+          alert("获取播放链接失败: " + directLinkData.msg);
+          return;
+        }
+
+        // 调用 API 获取视频详情（file/info），验证视频时长
+        const infoRes = await fetch(
+          `https://earnvidsapi.com/api/file/info?key=${API_KEY}&file_code=${currentFileCode}`
+        );
+        const infoData = await infoRes.json();
+        if (infoData.status !== 200) {
+          alert("获取视频信息失败: " + infoData.msg);
+          return;
+        }
+        const videoInfo = infoData.result[0];
+        console.log("视频信息:", videoInfo);
+
+        // 初始化记录
+        if (!videoRecords[currentFileCode]) {
+          videoRecords[currentFileCode] = {
+            title: videoInfo.file_title || "未知视频",
+            seconds: 0,
+            qualified: false
+          };
+        }
+
+        // 设置视频源并加载
+        const videoPlayer = document.getElementById("videoPlayer");
+        videoPlayer.src = directLinkData.result.hls_direct || directLinkData.result; // 优先 HLS 链接
+        videoPlayer.load();
+
+        // 监听视频播放事件，开始跟踪
+        videoPlayer.addEventListener("play", startTracking);
+        videoPlayer.addEventListener("pause", stopTracking);
+        videoPlayer.addEventListener("ended", stopTracking);
+
+      } catch (err) {
+        console.error("加载视频失败:", err);
+        alert("视频加载失败，请重试");
+      }
     }
 
-    // 计时逻辑（不变）
+    // 2. 开始跟踪观看时长
     function startTracking() {
-      if (timer) clearInterval(timer);
+      if (timer) return;
       timer = setInterval(() => {
-        if (isVideoPlaying) {
-          videoRecords[currentVideoId].watchSeconds++;
-          if (!videoRecords[currentVideoId].isQualified && checkQualified(currentVideoId)) {
-            videoRecords[currentVideoId].isQualified = true;
-            gtag('event', 'video_qualified', {
-              'event_category': 'video',
-              'event_label': currentVideoId,
-              'value': videoRecords[currentVideoId].watchSeconds,
-              'video_url': currentVideoUrl,
-              'ip': userIp,
-              'is_within_limit': isWithinLimit
-            });
-          }
-          updateProgressDisplay();
-          updateHistoryDisplay();
-          if (videoRecords[currentVideoId].watchSeconds % 10 === 0) {
-            gtag('event', 'video_progress', {
-              'event_category': 'video',
-              'event_label': currentVideoId,
-              'value': videoRecords[currentVideoId].watchSeconds,
-              'video_url': currentVideoUrl,
-              'ip': userIp,
-              'is_within_limit': isWithinLimit
-            });
+        watchSeconds++;
+        document.getElementById("watchTime").textContent = watchSeconds;
+
+        // 更新记录
+        if (videoRecords[currentFileCode]) {
+          videoRecords[currentFileCode].seconds = watchSeconds;
+          // 验证是否达到有效时长
+          if (watchSeconds >= REQUIRED_SECONDS && !videoRecords[currentFileCode].qualified) {
+            videoRecords[currentFileCode].qualified = true;
+            document.getElementById("qualifiedAlert").style.display = "block";
+            // 可在此处调用 API 记录合格状态（如 account/stats）
+            console.log("已达到有效观看时长，记录数据...");
           }
         }
+
+        updateHistory();
       }, 1000);
     }
 
-    // 页面关闭清理（不变）
-    window.addEventListener("beforeunload", () => {
-      Object.keys(videoRecords).forEach(videoId => {
-        const record = videoRecords[videoId];
-        gtag('event', 'video_end', {
-          'event_category': 'video',
-          'event_label': videoId,
-          'value': record.watchSeconds,
-          'is_qualified': record.isQualified,
-          'ip': userIp,
-          'ip_usage_count': getIpUsageCount(),
-          'is_within_limit': isWithinLimit
-        });
+    // 3. 停止跟踪
+    function stopTracking() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    // 更新观看记录
+    function updateHistory() {
+      let historyHtml = "观看记录：";
+      let hasRecords = false;
+      Object.values(videoRecords).forEach(record => {
+        hasRecords = true;
+        const status = record.qualified 
+          ? "✅ 已合格" 
+          : `⏱️ 已看${record.seconds}秒`;
+        historyHtml += `<br>${record.title}: ${status}`;
       });
-      clearInterval(timer);
-    });
+      document.getElementById("history").innerHTML = hasRecords ? historyHtml : "观看记录：暂无";
+    }
 
-    // 点击视频区域后立即启动自动计时（不依赖复杂检测）
-    document.getElementById('interactionHint').addEventListener('click', function() {
-      userInteracted = true;
-      this.style.display = 'none';
-      startAutoTracking(); // 点击后直接启动计时
+    // 页面关闭时保存记录
+    window.addEventListener("beforeunload", () => {
+      stopTracking();
+      // 可调用 API 同步最终观看数据到服务器（如 account/stats）
+      console.log("页面关闭，同步记录:", videoRecords);
     });
-
-    document.getElementById('videoSelector').addEventListener('change', loadSelectedVideo);
   </script>
 </body>
 </html>
