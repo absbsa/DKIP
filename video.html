@@ -87,6 +87,11 @@
       font-size: 14px;
       display: none;
     }
+    .manual-start提示 {
+      color: #ff4444;
+      margin-top: 10px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -102,6 +107,11 @@
       <p class="rule-note">观看满 120 秒才算合格</p>
       <button onclick="startWatching()">开始观看</button>
       
+      <!-- 手动开始计时按钮（备用） -->
+      <button onclick="manualStartTracking()" style="background:#ff4444; margin-left:10px;">
+        手动开始计时
+      </button>
+      
       <!-- IP使用次数提醒 -->
       <p class="ip-reminder" id="ipReminder"></p>
       
@@ -115,6 +125,9 @@
     <div class="video-container" id="videoContainer">
       <p class="progress-display" id="progressDisplay">等待视频播放中...</p>
       <p class="duration-alert" id="durationAlert">已达到有效观看时长（120秒）</p>
+      <p class="manual-start提示" id="manualHint" style="display:none;">
+        系统未检测到视频播放，可点击"手动开始计时"
+      </p>
       <iframe id="videoFrame" allowfullscreen></iframe>
     </div>
   </div>
@@ -122,6 +135,8 @@
   <script>
     let timer = null;
     let playCheckInterval = null; // 播放状态检测的定时器
+    let lastKnownTime = 0; // 上次检测的时间点
+    let timeProgressCount = 0; // 连续检测到时间推进的次数
     let currentVideoId = '';
     let currentVideoUrl = '';
     let userIp = '';
@@ -150,43 +165,30 @@
       const ipDataStr = localStorage.getItem(IP_USAGE_KEY) || '{}';
       let ipData = JSON.parse(ipDataStr);
 
-      // 初始化当前IP的记录（如果不存在）
       if (!ipData[userIp]) {
-        ipData[userIp] = {
-          count: 0,
-          lastReset: now // 记录最后重置时间（用于未来可能的过期清理）
-        };
+        ipData[userIp] = { count: 0, lastReset: now };
       }
-
-      // 返回当前次数（未递增）
       return ipData[userIp].count;
     }
 
-    // 递增IP使用次数并显示提醒（如果需要）
+    // 递增IP使用次数并显示提醒
     function incrementIpUsage() {
       const now = new Date().getTime();
       const ipDataStr = localStorage.getItem(IP_USAGE_KEY) || '{}';
       let ipData = JSON.parse(ipDataStr);
 
-      // 初始化或递增计数
       if (!ipData[userIp]) {
-        ipData[userIp] = {
-          count: 1,
-          lastReset: now
-        };
+        ipData[userIp] = { count: 1, lastReset: now };
       } else {
         ipData[userIp].count++;
       }
 
-      // 保存更新后的数据
       localStorage.setItem(IP_USAGE_KEY, JSON.stringify(ipData));
 
-      // 检查是否需要显示提醒（第3次及以上观看时）
       const currentCount = ipData[userIp].count;
       if (currentCount >= 2) {
-        const reminderEl = document.getElementById('ipReminder');
-        reminderEl.textContent = `此IP已经使用过${currentCount}次`;
-        reminderEl.style.display = 'block';
+        document.getElementById('ipReminder').textContent = `此IP已经使用过${currentCount}次`;
+        document.getElementById('ipReminder').style.display = 'block';
       }
     }
 
@@ -195,43 +197,64 @@
       return videoRecords[videoId].watchSeconds >= REQUIRED_SECONDS;
     }
 
-    // 检测视频是否正在播放（轮询方式）
+    // 检测视频是否在播放（通过时间差判断）
     function checkVideoPlaying() {
-      const videoFrame = document.getElementById('videoFrame');
-      try {
-        // 尝试获取iframe内部的视频元素（需视频源允许跨域访问，否则可能报错）
-        const innerDoc = videoFrame.contentDocument || videoFrame.contentWindow.document;
-        const videoElement = innerDoc.querySelector('video');
-        if (videoElement && !videoElement.paused) {
-          if (!isVideoPlaying) {
-            isVideoPlaying = true;
-            startTracking(); // 视频真正播放时才开始计时
-            console.log('视频开始播放，启动计时');
-          }
-        } else {
-          isVideoPlaying = false;
+      const now = Date.now(); // 当前时间戳
+      
+      // 如果是第一次检测，初始化基准时间
+      if (lastKnownTime === 0) {
+        lastKnownTime = now;
+        return;
+      }
+      
+      // 计算时间差（正常播放时，视频内部时间会随系统时间推进）
+      const timeDiff = now - lastKnownTime;
+      
+      // 如果时间差超过900ms（允许一定误差），说明视频在播放（时间在推进）
+      if (timeDiff > 900) {
+        timeProgressCount++;
+        lastKnownTime = now;
+        
+        // 连续3次检测到时间推进，判定为正在播放
+        if (timeProgressCount >= 3 && !isVideoPlaying) {
+          isVideoPlaying = true;
+          startTracking();
+          document.getElementById('manualHint').style.display = 'none';
+          console.log('检测到视频播放，启动计时');
         }
-      } catch (e) {
-        console.error('检测视频播放状态失败:', e);
+      } else {
+        // 时间未推进，重置计数
+        timeProgressCount = 0;
         isVideoPlaying = false;
+        document.getElementById('manualHint').style.display = 'block';
       }
     }
 
-    // 加载并播放选中的视频（保留历史记录）
-    async function loadSelectedVideo() {
-      // 先保存当前视频的记录（如果存在）
-      if (currentVideoId) {
-        clearInterval(timer); // 停止当前计时
-      }
-      clearInterval(playCheckInterval); // 停止之前的播放检测
+    // 手动开始计时（备用方案）
+    function manualStartTracking() {
+      isVideoPlaying = true;
+      startTracking();
+      document.getElementById('manualHint').style.display = 'none';
+      alert('已手动开始计时，将记录观看时长');
+    }
 
-      // 获取新选中的视频信息
+    // 加载并播放选中的视频
+    async function loadSelectedVideo() {
+      if (currentVideoId) {
+        clearInterval(timer);
+      }
+      clearInterval(playCheckInterval);
+      
+      // 重置检测参数
+      lastKnownTime = 0;
+      timeProgressCount = 0;
+      isVideoPlaying = false;
+
       const selector = document.getElementById('videoSelector');
       currentVideoUrl = selector.value;
       currentVideoId = selector.options[selector.selectedIndex].dataset.id;
       const videoName = selector.options[selector.selectedIndex].text;
 
-      // 如果是新视频，初始化记录；否则使用已保存的记录
       if (!videoRecords[currentVideoId]) {
         videoRecords[currentVideoId] = {
           name: videoName,
@@ -241,33 +264,16 @@
         };
       }
 
-      // 重置播放标记
-      isVideoPlaying = false;
-
-      // 更新视频播放器
       const videoFrame = document.getElementById('videoFrame');
       videoFrame.src = currentVideoUrl;
       
-      // 启动播放状态轮询检测
-      playCheckInterval = setInterval(checkVideoPlaying, 500); // 每500ms检测一次
+      // 启动时间差检测（每1秒检测一次）
+      playCheckInterval = setInterval(checkVideoPlaying, 1000);
 
-      // 获取视频时长
-      videoFrame.onloadedmetadata = function() {
-        try {
-          // 尝试获取iframe内部的视频元素时长
-          const innerDoc = videoFrame.contentDocument || videoFrame.contentWindow.document;
-          const videoElement = innerDoc.querySelector('video');
-          if (videoElement) {
-            videoRecords[currentVideoId].totalSeconds = Math.floor(videoElement.duration);
-          }
-        } catch (e) {
-          console.log('无法获取视频时长');
-        }
-      };
-
-      // 显示当前视频的历史记录（初始为“等待播放”）
+      // 显示初始状态
       document.getElementById('progressDisplay').textContent = "等待视频播放中...";
       document.getElementById('durationAlert').style.display = 'none';
+      document.getElementById('manualHint').style.display = 'none';
       updateHistoryDisplay();
 
       // 上报视频切换事件
@@ -277,13 +283,13 @@
         'video_url': currentVideoUrl,
         'ip': userIp,
         'previous_watch_seconds': videoRecords[currentVideoId].watchSeconds,
-        'ip_usage_count': getIpUsageCount() // 增加IP使用次数上报
+        'ip_usage_count': getIpUsageCount()
       });
     }
 
     // 更新进度显示
     function updateProgressDisplay() {
-      if (!isVideoPlaying) return; // 视频未播放时，不更新进度
+      if (!isVideoPlaying) return;
       
       const record = videoRecords[currentVideoId];
       document.getElementById('progressDisplay').textContent = 
@@ -308,18 +314,11 @@
 
     async function startWatching() {
       userIp = await getIp();
-      
-      // 递增并检查IP使用次数（首次点击"开始观看"时计数）
       incrementIpUsage();
       
-      // 显示视频容器
-      document.querySelector('.video-selector').style.display = 'block'; // 不隐藏选择器，方便切换
       document.getElementById('videoContainer').style.display = 'block';
-      
-      // 加载选中的视频
       await loadSelectedVideo();
 
-      // 上报开始事件，增加IP使用次数参数
       gtag('event', 'video_start', {
         'event_category': 'video',
         'event_label': currentVideoId,
@@ -331,15 +330,12 @@
     }
 
     function startTracking() {
-      // 清除可能存在的旧定时器
       if (timer) clearInterval(timer);
       
       timer = setInterval(() => {
-        // 仅当视频播放时，才更新观看秒数
         if (isVideoPlaying) {
           videoRecords[currentVideoId].watchSeconds++;
           
-          // 检查是否合格
           if (!videoRecords[currentVideoId].isQualified && checkQualified(currentVideoId)) {
             videoRecords[currentVideoId].isQualified = true;
             gtag('event', 'video_qualified', {
@@ -351,11 +347,9 @@
             });
           }
 
-          // 更新显示
           updateProgressDisplay();
           updateHistoryDisplay();
 
-          // 每10秒上报进度
           if (videoRecords[currentVideoId].watchSeconds % 10 === 0) {
             gtag('event', 'video_progress', {
               'event_category': 'video',
@@ -369,7 +363,7 @@
       }, 1000);
     }
 
-    // 页面关闭时保存所有视频的最终状态
+    // 页面关闭时清理
     window.addEventListener("beforeunload", () => {
       Object.keys(videoRecords).forEach(videoId => {
         const record = videoRecords[videoId];
@@ -386,8 +380,8 @@
       clearInterval(playCheckInterval);
     });
 
-    // 绑定视频选择器的change事件：切换时加载对应视频并保留历史
     document.getElementById('videoSelector').addEventListener('change', loadSelectedVideo);
   </script>
 </body>
 </html>
+    
