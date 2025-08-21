@@ -245,14 +245,12 @@
       return isWithinLimit && videoRecords[videoId].watchSeconds >= REQUIRED_SECONDS;
     }
 
-    // 核心修复：播放状态检测（暂停时清除定时器）
+    // 核心改进：播放状态检测（结合用户交互和严格时间差验证）
     function checkVideoPlaying() {
       // 未交互过的用户直接判定为未播放
       if (!userInteracted) {
         if (isVideoPlaying) {
           isVideoPlaying = false;
-          clearInterval(timer); // 未交互时停止计时（新增）
-          timer = null; // 新增
           document.getElementById('manualHint').style.display = 'block';
         }
         return;
@@ -272,12 +270,10 @@
           console.log('检测到视频播放，启动计时');
         }
       } else {
-        // 时间差过小，判定为暂停/未播放（新增清除定时器逻辑）
+        // 时间差过小，判定为暂停/未播放
         timeProgressCount = 0;
         if (isVideoPlaying) {
           isVideoPlaying = false;
-          clearInterval(timer); // 关键：暂停时彻底停止计时定时器
-          timer = null; // 新增：清空定时器变量
           document.getElementById('manualHint').style.display = 'block';
           console.log('视频暂停，停止计时');
         }
@@ -445,4 +441,4 @@
     document.getElementById('videoSelector').addEventListener('change', loadSelectedVideo);
   </script>
 </body>
-</html> 
+</html>
