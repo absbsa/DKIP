@@ -172,9 +172,9 @@
     let currentVideoId = '';
     let currentVideoUrl = '';
     let userIp = '';
-    let isVideoPlaying = false; // 视频是否正在播放
+    let isVideoPlaying = false;
     let isWithinLimit = true;
-    let userInteracted = false; // 用户是否点击过视频区域
+    let userInteracted = false;
     const REQUIRED_SECONDS = 120;
     const IP_USAGE_KEY = 'ipDailyUsageCount';
     const DAILY_LIMIT = 2;
@@ -193,7 +193,7 @@
       }
     }
 
-    // IP次数管理（每日重置）
+    // IP次数管理
     function checkAndResetDailyCount(ipData) {
       const now = new Date().getTime();
       const oneDay = 24 * 60 * 60 * 1000;
@@ -246,13 +246,12 @@
       return isWithinLimit && videoRecords[videoId].watchSeconds >= REQUIRED_SECONDS;
     }
 
-    // 核心优化：播放状态检测（实时控制计时启停）
+    // 核心修复：播放状态检测（明确控制定时器）
     function checkVideoPlaying() {
-      // 未点击视频区域，直接判定为未播放
       if (!userInteracted) {
         if (isVideoPlaying) {
           isVideoPlaying = false;
-          clearInterval(timer); // 强制停止计时
+          clearInterval(timer); // 未交互时强制停止定时器
           timer = null;
           document.getElementById('manualHint').style.display = 'block';
         }
@@ -262,11 +261,10 @@
       const now = Date.now();
       const timeDiff = now - lastKnownTime;
 
-      // 播放中判定：连续2次时间差>1000ms（降低阈值，提高灵敏度）
+      // 播放判定：降低阈值（1000ms）和连续次数（2次），确保播放时能触发
       if (timeDiff > 1000) {
         timeProgressCount++;
         lastKnownTime = now;
-        // 连续2次检测到时间推进，判定为播放中
         if (timeProgressCount >= 2 && !isVideoPlaying) {
           isVideoPlaying = true;
           startTracking(); // 启动计时
@@ -274,38 +272,37 @@
           console.log('视频播放中，启动计时');
         }
       } else {
-        // 暂停判定：时间差<1000ms，立即停止计时
+        // 暂停判定：明确清除定时器，完全停止计时
         timeProgressCount = 0;
         if (isVideoPlaying) {
           isVideoPlaying = false;
-          clearInterval(timer); // 强制停止计时
+          clearInterval(timer); // 关键：暂停时清除定时器
           timer = null;
           document.getElementById('manualHint').style.display = 'block';
-          console.log('视频已暂停，停止计时');
+          console.log('视频暂停，已停止计时');
         }
       }
     }
 
-    // 手动计时（备用）
+    // 手动计时
     function manualStartTracking() {
       userInteracted = true;
       document.getElementById('interactionHint').style.display = 'none';
       isVideoPlaying = true;
-      startTracking(); // 启动计时
+      startTracking();
       document.getElementById('manualHint').style.display = 'none';
-      alert(isWithinLimit ? '已手动开始计时，将记录观看时长' : '已手动开始计时，但本次不计入有效次数');
+      alert(isWithinLimit ? '已手动开始计时' : '已手动开始计时（不计入有效）');
     }
 
     // 加载视频
     async function loadSelectedVideo() {
-      // 清除之前的定时器
       if (timer) {
         clearInterval(timer);
         timer = null;
       }
       if (playCheckInterval) clearInterval(playCheckInterval);
       
-      // 重置所有状态
+      // 重置状态
       lastKnownTime = 0;
       timeProgressCount = 0;
       isVideoPlaying = false;
@@ -322,7 +319,6 @@
           name: videoName,
           watchSeconds: 0,
           isQualified: false,
-          totalSeconds: 0,
           isEffective: true
         };
       }
@@ -331,7 +327,7 @@
       const videoFrame = document.getElementById('videoFrame');
       videoFrame.src = currentVideoUrl;
       
-      // 每300ms检测一次（提高检测频率，减少延迟）
+      // 高频检测（300ms/次），确保状态切换及时
       playCheckInterval = setInterval(checkVideoPlaying, 300);
 
       document.getElementById('progressDisplay').textContent = "等待视频播放中...";
@@ -343,10 +339,7 @@
         'event_category': 'video',
         'event_label': currentVideoId,
         'video_url': currentVideoUrl,
-        'ip': userIp,
-        'previous_watch_seconds': videoRecords[currentVideoId].watchSeconds,
-        'ip_usage_count': getIpUsageCount(),
-        'is_within_limit': isWithinLimit
+        'ip': userIp
       });
     }
 
@@ -355,7 +348,7 @@
       if (!isVideoPlaying) return;
       const record = videoRecords[currentVideoId];
       let progressText = `已观看: ${record.watchSeconds}秒 / 需观看: 120秒`;
-      if (!isWithinLimit) progressText += '（本次观看不计入有效）';
+      if (!isWithinLimit) progressText += '（不计入有效）';
       document.getElementById('progressDisplay').textContent = progressText;
       document.getElementById('durationAlert').style.display = record.isQualified ? 'block' : 'none';
     }
@@ -380,74 +373,36 @@
       incrementIpUsage();
       document.getElementById('videoContainer').style.display = 'block';
       await loadSelectedVideo();
-      gtag('event', 'video_start', {
-        'event_category': 'video',
-        'event_label': currentVideoId,
-        'video_url': currentVideoUrl,
-        'ip': userIp,
-        'previous_watch_seconds': videoRecords[currentVideoId].watchSeconds,
-        'ip_usage_count': getIpUsageCount(),
-        'is_within_limit': isWithinLimit
-      });
+      gtag('event', 'video_start', { 'event_category': 'video', 'event_label': currentVideoId });
     }
 
     // 计时逻辑（仅在播放时运行）
     function startTracking() {
-      // 确保只启动一个定时器
       if (timer) clearInterval(timer);
       timer = setInterval(() => {
-        if (isVideoPlaying) { // 双重保险：仅播放状态下才累加
+        if (isVideoPlaying) { // 双重保险
           videoRecords[currentVideoId].watchSeconds++;
           if (!videoRecords[currentVideoId].isQualified && checkQualified(currentVideoId)) {
             videoRecords[currentVideoId].isQualified = true;
-            gtag('event', 'video_qualified', {
-              'event_category': 'video',
-              'event_label': currentVideoId,
-              'value': videoRecords[currentVideoId].watchSeconds,
-              'video_url': currentVideoUrl,
-              'ip': userIp,
-              'is_within_limit': isWithinLimit
-            });
+            gtag('event', 'video_qualified', { 'event_category': 'video', 'event_label': currentVideoId });
           }
           updateProgressDisplay();
           updateHistoryDisplay();
-          if (videoRecords[currentVideoId].watchSeconds % 10 === 0) {
-            gtag('event', 'video_progress', {
-              'event_category': 'video',
-              'event_label': currentVideoId,
-              'value': videoRecords[currentVideoId].watchSeconds,
-              'video_url': currentVideoUrl,
-              'ip': userIp,
-              'is_within_limit': isWithinLimit
-            });
-          }
         }
       }, 1000);
     }
 
     // 页面关闭清理
     window.addEventListener("beforeunload", () => {
-      Object.keys(videoRecords).forEach(videoId => {
-        const record = videoRecords[videoId];
-        gtag('event', 'video_end', {
-          'event_category': 'video',
-          'event_label': videoId,
-          'value': record.watchSeconds,
-          'is_qualified': record.isQualified,
-          'ip': userIp,
-          'ip_usage_count': getIpUsageCount(),
-          'is_within_limit': isWithinLimit
-        });
-      });
       clearInterval(timer);
       clearInterval(playCheckInterval);
     });
 
-    // 视频区域点击交互（必须点击后才可能启动计时）
+    // 视频区域点击交互
     document.getElementById('interactionHint').addEventListener('click', function() {
       userInteracted = true;
       this.style.display = 'none';
-      lastKnownTime = Date.now(); // 初始化时间基准
+      lastKnownTime = Date.now();
     });
 
     document.getElementById('videoSelector').addEventListener('change', loadSelectedVideo);
