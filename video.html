@@ -247,7 +247,7 @@
         watchSeconds++;
         document.getElementById('statusText').innerText = `正在计时...（已观看：${watchSeconds}秒）`;
         
-        // 观看满120秒后上报数据
+        // 观看满120秒后上报数据（只上报达标记录）
         if (watchSeconds >= 120) {
           clearInterval(timer);
           document.getElementById('statusText').innerText = '已达标！累计观看120秒';
@@ -256,13 +256,13 @@
       }, 1000);
     }
 
-    // 上报数据到后端
+    // 上报数据到后端（只发送必要字段）
     async function reportToBackend() {
+      // 只包含需要存储的字段：username、ip、videoUrl
       const reportData = {
         username: currentUsername,
         ip: userIp,
-        videoUrl: selector.value,
-        watchSeconds: watchSeconds
+        videoUrl: selector.value
       };
 
       try {
