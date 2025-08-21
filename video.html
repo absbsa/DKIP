@@ -1,229 +1,175 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>视频观看计时（交互关联版）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-X0ZSRRF93P"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-X0ZSRRF93P');
-  </script>
-
+  <title>视频观看监控</title>
   <style>
-    body { margin: 0; padding: 20px; background: #111; color: white; font-family: Arial, sans-serif; }
-    .container { max-width: 1200px; margin: 0 auto; }
-    .video-selector { background: #222; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0; }
-    .video-container { width: 100%; height: 70vh; margin-top: 20px; position: relative; display: none; }
-    iframe { width: 100%; height: 100%; border: none; background: #000; }
-    .overlay {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
-      z-index: 10; cursor: pointer;
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #video-container { position: relative; width: 800px; height: 450px; }
+    #overlay {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      color: #fff; display: flex;
+      align-items: center; justify-content: center;
+      cursor: pointer; font-size: 20px;
+      z-index: 2;
     }
-    .overlay-text { font-size: 20px; text-align: center; padding: 20px; }
-    button { padding: 12px 24px; background: #1DA1F2; color: white; border: none; border-radius: 30px; cursor: pointer; margin: 10px; }
-    .status { margin: 15px 0; font-size: 18px; }
-    .qualified { color: #4CAF50; font-weight: bold; display: none; }
-    .history { background: #333; padding: 10px; border-radius: 5px; text-align: left; margin-top: 15px; }
-    .warning { color: #ff4444; margin: 10px 0; display: none; }
-    .ip-info { color: #ff9800; margin: 10px 0; font-size: 14px; }
+    #inactive-msg { color: red; font-weight: bold; display: none; }
+    #history { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="video-selector">
-      <h3>选择视频</h3>
-      <select id="videoSelect">
-        <option value="https://mivalyo.com/embed/6suaa9gg9y7y">黄霄雲 1</option>
-        <option value="https://mivalyo.com/embed/649eym1t2485">黄霄雲 2</option>
-        <option value="https://mivalyo.com/embed/third-video-id">视频 3</option>
-      </select>
-      
-      <button onclick="loadVideo()">加载视频</button>
-      <button onclick="startTracking()">开始计时</button>
-      <button onclick="stopTracking()">停止计时</button>
-      
-      <div class="status">
-        已观看: <span id="watchTime">0</span>秒 / 需观看: 120秒
-      </div>
-      <div class="qualified" id="qualifiedAlert">✅ 已达到有效观看时长！</div>
-      <div class="warning" id="inactiveWarning">⚠️ 检测到未活跃观看，计时已暂停</div>
-      
-      <div class="ip-info" id="ipInfo"></div>
-      <div class="history" id="history">观看记录：暂无</div>
-    </div>
-    
-    <div class="video-container" id="videoContainer">
-      <!-- 视频覆盖层：必须点击才能开始交互 -->
-      <div class="overlay" id="videoOverlay">
-        <div class="overlay-text">点击视频区域开始观看（需先点击此处激活）</div>
-      </div>
-      <iframe id="videoFrame" allowfullscreen></iframe>
-    </div>
+  <h2>视频观看监控 Demo</h2>
+
+  <!-- 视频选择 -->
+  <label for="videoSelector">选择视频：</label>
+  <select id="videoSelector">
+    <option value="https://mivalyo.com/embed/6suaa9gg9y7y">视频1</option>
+    <option value="https://mivalyo.com/embed/abcd1234efgh5678">视频2</option>
+  </select>
+
+  <!-- 视频区域 -->
+  <div id="video-container">
+    <iframe id="videoFrame" src="" width="800" height="450" frameborder="0" allowfullscreen></iframe>
+    <div id="overlay">点击开始观看</div>
   </div>
 
+  <p id="inactive-msg">⚠️ 您已不活跃，计时暂停！</p>
+  <div id="history">观看记录：暂无</div>
+
   <script>
-    let timer = null;
-    let activityTimer = null; // 检测用户活跃的定时器
+    // ================== 配置 ==================
+    const REQUIRED_SECONDS = 120;      // 合格所需秒数
+    const MAX_DAILY_WATCHES = 2;       // 每日最多次数
+    const INACTIVE_TIMEOUT = 10;       // 无操作多少秒判定不活跃
+
+    // ================== 全局状态 ==================
+    let active = false;
     let currentSeconds = 0;
-    let currentVideoUrl = '';
-    let currentVideoName = '';
-    let isTracking = false;
-    let isActive = false; // 标记用户是否在活跃观看
-    const REQUIRED = 120;
-    const records = {};
-    let userIp = '';
-    const DAILY_LIMIT = 2;
-    const INACTIVE_THRESHOLD = 10000; // 10秒无活动视为未观看
+    let timer = null;
+    let inactivityTimer = null;
+    let currentVideo = "";
+    const records = {}; // { videoUrl: { name, seconds, qualified } }
 
-    // 获取IP
-    async function getIp() {
-      try {
-        const res = await fetch('https://api.ipify.org?format=json');
-        const data = await res.json();
-        userIp = data.ip;
-        updateIpInfo();
-      } catch (e) {
-        userIp = '未知IP';
-        updateIpInfo();
-      }
+    // ================== 工具函数 ==================
+    function getIP() {
+      return new Promise(resolve => {
+        fetch("https://api64.ipify.org?format=json")
+          .then(res => res.json())
+          .then(data => resolve(data.ip))
+          .catch(() => resolve("unknown"));
+      });
     }
 
-    // 更新IP信息
-    function updateIpInfo() {
-      const today = new Date().toDateString();
-      const key = `ip_${userIp}_${today}`;
-      let count = parseInt(localStorage.getItem(key) || 0);
-      const remaining = Math.max(0, DAILY_LIMIT - count);
-      document.getElementById('ipInfo').textContent = 
-        `24小时内剩余有效次数: ${remaining}/${DAILY_LIMIT}（IP: ${userIp}）`;
-      return count < DAILY_LIMIT;
+    function getTodayKey(ip) {
+      const today = new Date().toISOString().slice(0,10);
+      return `watch_${ip}_${today}`;
     }
 
-    // 加载视频
-    function loadVideo() {
-      const select = document.getElementById('videoSelect');
-      currentVideoUrl = select.value;
-      currentVideoName = select.options[select.selectedIndex].text;
-      
-      stopTracking();
-      currentSeconds = records[currentVideoUrl]?.seconds || 0;
-      document.getElementById('watchTime').textContent = currentSeconds;
-      document.getElementById('qualifiedAlert').style.display = 'none';
-      document.getElementById('videoOverlay').style.display = 'flex'; // 显示覆盖层
-      document.getElementById('videoContainer').style.display = 'block';
-      document.getElementById('videoFrame').src = currentVideoUrl;
-      
-      if (!records[currentVideoUrl]) {
-        records[currentVideoUrl] = { name: currentVideoName, seconds: 0, qualified: false };
-      }
-      updateHistory();
+    async function canWatch() {
+      const ip = await getIP();
+      const key = getTodayKey(ip);
+      let count = localStorage.getItem(key) || 0;
+      return { allowed: count < MAX_DAILY_WATCHES, key, count };
     }
 
-    // 激活视频交互（必须点击覆盖层才能开始）
-    document.getElementById('videoOverlay').addEventListener('click', function() {
-      this.style.display = 'none'; // 隐藏覆盖层
-      isActive = true; // 标记为已激活
-      document.getElementById('inactiveWarning').style.display = 'none';
-    });
+    function addWatch(key, count) {
+      localStorage.setItem(key, count+1);
+    }
 
-    // 检测用户活跃（鼠标移动/点击视为在观看）
+    function sendGAEvent(videoUrl, seconds) {
+      console.log("📊 发送 GA 事件:", videoUrl, seconds);
+      // TODO: 替换成你自己的 GA 上报
+    }
+
+    // ================== 活跃监控 ==================
     function resetActivity() {
-      isActive = true;
-      document.getElementById('inactiveWarning').style.display = 'none';
-      
-      // 重置无活动定时器
-      clearTimeout(activityTimer);
-      activityTimer = setTimeout(() => {
-        isActive = false; // 超过阈值视为未活跃
-        document.getElementById('inactiveWarning').style.display = 'block';
-      }, INACTIVE_THRESHOLD);
+      active = true;
+      document.getElementById("inactive-msg").style.display = "none";
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        active = false;
+        document.getElementById("inactive-msg").style.display = "block";
+      }, INACTIVE_TIMEOUT * 1000);
     }
 
-    // 开始计时（必须满足：1. 点击过视频覆盖层；2. 用户活跃）
-    function startTracking() {
-      // 验证：必须点击过视频覆盖层才能开始
-      if (document.getElementById('videoOverlay').style.display !== 'none') {
-        alert('请先点击视频区域的覆盖层激活观看');
-        return;
-      }
-      if (isTracking) return;
-      
-      const isWithinLimit = updateIpInfo();
-      if (!isWithinLimit) {
-        alert('已超过今日有效次数限制');
-      }
-      
-      isTracking = true;
-      isActive = true;
-      resetActivity(); // 初始激活
-      
-      // 监听鼠标移动和点击（视为活跃观看）
-      document.addEventListener('mousemove', resetActivity);
-      document.addEventListener('click', resetActivity);
-      
-      // 核心计时逻辑：仅在活跃状态下计时
+    document.addEventListener("mousemove", resetActivity);
+    document.addEventListener("click", resetActivity);
+
+    // ================== 计时逻辑 ==================
+    function startTimer() {
+      if (timer) clearInterval(timer);
       timer = setInterval(() => {
-        if (isActive) { // 只有活跃状态才累加时间
+        if (active) {
           currentSeconds++;
-          document.getElementById('watchTime').textContent = currentSeconds;
-          records[currentVideoUrl].seconds = currentSeconds;
-          
-          // 检查合格
-          if (currentSeconds >= REQUIRED && !records[currentVideoUrl].qualified) {
-            records[currentVideoUrl].qualified = true;
-            document.getElementById('qualifiedAlert').style.display = 'block';
-            gtag('event', 'qualified', { video: currentVideoName, seconds: currentSeconds });
-            
-            if (isWithinLimit) {
-              const today = new Date().toDateString();
-              localStorage.setItem(`ip_${userIp}_${today}`, 
-                (parseInt(localStorage.getItem(`ip_${userIp}_${today}`) || 0) + 1).toString());
-              updateIpInfo();
-            }
+          console.log(`⏱ 当前已观看 ${currentSeconds} 秒`);
+
+          // 更新记录
+          if (records[currentVideo]) {
+            records[currentVideo].seconds = currentSeconds;
           }
+
+          // 判断合格
+          if (currentSeconds >= REQUIRED_SECONDS && !records[currentVideo].qualified) {
+            records[currentVideo].qualified = true;
+            sendGAEvent(currentVideo, currentSeconds);
+          }
+
           updateHistory();
         }
       }, 1000);
     }
 
-    // 停止计时
-    function stopTracking() {
-      if (!isTracking) return;
-      
-      clearInterval(timer);
-      clearTimeout(activityTimer);
-      isTracking = false;
-      isActive = false;
-      
-      // 移除事件监听
-      document.removeEventListener('mousemove', resetActivity);
-      document.removeEventListener('click', resetActivity);
+    function stopTimer() {
+      if (timer) clearInterval(timer);
+      timer = null;
     }
 
-    // 更新历史
+    // ================== 界面更新 ==================
     function updateHistory() {
-      let html = '观看记录：';
+      let html = "观看记录：<br>";
       let hasRecord = false;
       Object.values(records).forEach(item => {
         hasRecord = true;
-        const status = item.qualified ? '✅ 已合格' : `⏱️ ${item.seconds}秒`;
-        html += `<br>${item.name}: ${status}`;
+        const status = item.qualified ? "✅ 合格" : "⏳ 进行中";
+        html += `${item.name}: 已观看 ${item.seconds} 秒 ${status}<br>`;
       });
-      if (!hasRecord) html += '暂无';
-      document.getElementById('history').innerHTML = html;
+      if (!hasRecord) html += "暂无";
+      document.getElementById("history").innerHTML = html;
     }
 
-    // 页面加载时初始化
-    window.onload = () => {
-      getIp();
-      // 页面关闭时停止计时
-      window.addEventListener('beforeunload', stopTracking);
-    };
+    // ================== 事件绑定 ==================
+    document.getElementById("overlay").addEventListener("click", async () => {
+      const { allowed, key, count } = await canWatch();
+      if (!allowed) {
+        alert("今日观看次数已达上限！");
+        return;
+      }
+      addWatch(key, parseInt(count));
+      document.getElementById("overlay").style.display = "none";
+      resetActivity();
+      startTimer();
+    });
+
+    document.getElementById("videoSelector").addEventListener("change", e => {
+      const url = e.target.value;
+      currentVideo = url;
+      document.getElementById("videoFrame").src = url;
+
+      if (!records[url]) {
+        records[url] = { name: e.target.selectedOptions[0].text, seconds: 0, qualified: false };
+      }
+      currentSeconds = records[url].seconds;
+      updateHistory();
+
+      // 切换视频时重置覆盖层
+      document.getElementById("overlay").style.display = "flex";
+      stopTimer();
+    });
+
+    // 初始化加载第一个视频
+    document.getElementById("videoSelector").dispatchEvent(new Event("change"));
   </script>
 </body>
 </html>
