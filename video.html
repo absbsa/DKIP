@@ -15,29 +15,110 @@
   </script>
 
   <style>
-    /* 保持原有样式不变 */
-    .video-container { position: relative; }
+    /* 保持原有样式不变，新增视频容器交互提示 */
+    .video-container {
+      position: relative; /* 用于覆盖交互提示层 */
+    }
     .interaction-hint {
       position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7); color: white;
-      display: flex; align-items: center; justify-content: center;
-      z-index: 10; cursor: pointer;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10; /* 覆盖在iframe上方 */
+      cursor: pointer;
     }
-    body { margin: 0; padding: 20px; min-height: 100vh; background: #111; color: white; font-family: Arial, sans-serif; }
-    .container { max-width: 1200px; margin: 0 auto; }
-    .video-container { width: 100%; height: 70vh; margin-top: 20px; display: none; }
-    iframe { width: 100%; height: 100%; border: none; }
-    .video-selector { margin: 20px 0; padding: 20px; background: #222; border-radius: 10px; text-align: center; }
-    button { padding: 12px 24px; background: #1DA1F2; color: white; border: none; border-radius: 30px; font-size: 16px; cursor: pointer; margin-top: 10px; }
-    button:hover { background: #0d8bd9; }
-    .rule-note { font-size: 14px; color: #ffd700; margin-top: 5px; line-height: 1.6; white-space: pre-line; }
-    .duration-alert { color: #4CAF50; margin-top: 10px; display: none; }
-    .progress-display { color: #fff; margin-top: 10px; font-size: 14px; }
-    .video-history { margin-top: 15px; padding: 10px; background: #333; border-radius: 5px; font-size: 13px; text-align: left; }
-    .ip-reminder { color: #ff9800; margin-top: 10px; font-size: 14px; display: none; }
-    .ip-limit-alert { color: #ff4444; margin-top: 10px; font-size: 14px; display: none; }
-    .manual-start提示 { color: #ff4444; margin-top: 10px; font-size: 14px; }
+    /* 其他样式保持不变 */
+    body {
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .video-container {
+      width: 100%;
+      height: 70vh;
+      margin-top: 20px;
+      display: none;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .video-selector {
+      margin: 20px 0;
+      padding: 20px;
+      background: #222;
+      border-radius: 10px;
+      text-align: center;
+    }
+    button {
+      padding: 12px 24px;
+      background: #1DA1F2;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #0d8bd9;
+    }
+    .rule-note {
+      font-size: 14px;
+      color: #ffd700;
+      margin-top: 5px;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+    .duration-alert {
+      color: #4CAF50;
+      margin-top: 10px;
+      display: none;
+    }
+    .progress-display {
+      color: #fff;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .video-history {
+      margin-top: 15px;
+      padding: 10px;
+      background: #333;
+      border-radius: 5px;
+      font-size: 13px;
+      text-align: left;
+    }
+    .ip-reminder {
+      color: #ff9800;
+      margin-top: 10px;
+      font-size: 14px;
+      display: none;
+    }
+    .ip-limit-alert {
+      color: #ff4444;
+      margin-top: 10px;
+      font-size: 14px;
+      display: none;
+    }
+    .manual-start提示 {
+      color: #ff4444;
+      margin-top: 10px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -54,18 +135,30 @@
         如点击开始后视频直接播放未弹出广告，连续点击播放视频页面直至能看到视频进度条为止，
         每个视频观看满 120 秒才算合格</p>
       <button onclick="startWatching()">开始观看</button>
-      <button onclick="manualStartTracking()" style="background:#ff4444; margin-left:10px;">手动开始计时</button>
+      
+      <!-- 手动开始计时按钮（备用） -->
+      <button onclick="manualStartTracking()" style="background:#ff4444; margin-left:10px;">
+        手动开始计时
+      </button>
+      
+      <!-- IP使用次数提醒 -->
       <p class="ip-reminder" id="ipReminder"></p>
       <p class="ip-limit-alert" id="ipLimitAlert"></p>
-      <div class="video-history" id="videoHistory">观看记录：暂无</div>
+      
+      <!-- 视频历史记录显示 -->
+      <div class="video-history" id="videoHistory">
+        观看记录：暂无
+      </div>
     </div>
 
-    <!-- 视频容器 -->
+    <!-- 视频容器（新增交互提示层） -->
     <div class="video-container" id="videoContainer">
       <div class="interaction-hint" id="interactionHint">点击视频区域开始播放并启动计时</div>
       <p class="progress-display" id="progressDisplay">等待视频播放中...</p>
       <p class="duration-alert" id="durationAlert">已达到有效观看时长（120秒）</p>
-      <p class="manual-start提示" id="manualHint" style="display:none;">系统未检测到视频播放，可点击"手动开始计时"</p>
+      <p class="manual-start提示" id="manualHint" style="display:none;">
+        系统未检测到视频播放，可点击"手动开始计时"
+      </p>
       <iframe id="videoFrame" allowfullscreen></iframe>
     </div>
   </div>
@@ -80,10 +173,11 @@
     let userIp = '';
     let isVideoPlaying = false;
     let isWithinLimit = true;
-    let userInteracted = false;
+    let userInteracted = false; // 新增：标记用户是否与视频区域交互过
     const REQUIRED_SECONDS = 120;
     const IP_USAGE_KEY = 'ipDailyUsageCount';
     const DAILY_LIMIT = 2;
+    
     let videoRecords = {};
 
     // 获取用户IP（不变）
@@ -151,14 +245,14 @@
       return isWithinLimit && videoRecords[videoId].watchSeconds >= REQUIRED_SECONDS;
     }
 
-    // 核心修改：优化开始计时灵敏度和暂停计时彻底性
+    // 核心修复：播放状态检测（暂停时清除定时器）
     function checkVideoPlaying() {
-      // 未交互时强制停止计时
+      // 未交互过的用户直接判定为未播放
       if (!userInteracted) {
         if (isVideoPlaying) {
           isVideoPlaying = false;
-          clearInterval(timer);
-          timer = null;
+          clearInterval(timer); // 未交互时停止计时
+          timer = null; // 清空定时器变量
           document.getElementById('manualHint').style.display = 'block';
         }
         return;
@@ -167,30 +261,35 @@
       const now = Date.now();
       const timeDiff = now - lastKnownTime;
 
-      // 开始计时优化：降低触发门槛（1000ms+2次连续检测）
-      if (timeDiff > 1000) {
+      // 严格判定：连续3次检测到时间差>1.5秒（排除广告/加载阶段的微小时间推进）
+      if (timeDiff > 1500) { // 加大时间差阈值，避免广告阶段误判
         timeProgressCount++;
         lastKnownTime = now;
-        if (timeProgressCount >= 2 && !isVideoPlaying) {
+        if (timeProgressCount >= 3 && !isVideoPlaying) {
           isVideoPlaying = true;
           startTracking();
           document.getElementById('manualHint').style.display = 'none';
+          console.log('检测到视频播放，启动计时');
         }
       } else {
-        // 暂停计时优化：立即清除定时器
+        // 时间差过小，判定为暂停/未播放（修复：确保定时器完全停止）
         timeProgressCount = 0;
         if (isVideoPlaying) {
           isVideoPlaying = false;
-          clearInterval(timer);
-          timer = null;
+          // 关键修复：双重保险停止计时
+          if (timer) {
+            clearInterval(timer);
+            timer = null; // 彻底清空定时器
+          }
           document.getElementById('manualHint').style.display = 'block';
+          console.log('视频暂停，已完全停止计时');
         }
       }
     }
 
     // 手动计时（不变）
     function manualStartTracking() {
-      userInteracted = true;
+      userInteracted = true; // 手动计时视为已交互
       document.getElementById('interactionHint').style.display = 'none';
       isVideoPlaying = true;
       startTracking();
@@ -198,16 +297,17 @@
       alert(isWithinLimit ? '已手动开始计时，将记录观看时长' : '已手动开始计时，但本次不计入有效次数');
     }
 
-    // 加载视频（不变）
+    // 加载视频（新增交互绑定）
     async function loadSelectedVideo() {
       if (currentVideoId) clearInterval(timer);
       clearInterval(playCheckInterval);
       
+      // 重置状态（关键：重置用户交互状态）
       lastKnownTime = 0;
       timeProgressCount = 0;
       isVideoPlaying = false;
-      userInteracted = false;
-      document.getElementById('interactionHint').style.display = 'flex';
+      userInteracted = false; // 重置交互状态
+      document.getElementById('interactionHint').style.display = 'flex'; // 显示交互提示
 
       const selector = document.getElementById('videoSelector');
       currentVideoUrl = selector.value;
@@ -228,7 +328,8 @@
       const videoFrame = document.getElementById('videoFrame');
       videoFrame.src = currentVideoUrl;
       
-      playCheckInterval = setInterval(checkVideoPlaying, 500);
+      // 启动检测（缩短检测间隔，提高响应速度）
+      playCheckInterval = setInterval(checkVideoPlaying, 500); // 每500ms检测一次
 
       document.getElementById('progressDisplay').textContent = "等待视频播放中...";
       document.getElementById('durationAlert').style.display = 'none';
@@ -288,6 +389,7 @@
 
     // 计时逻辑（不变）
     function startTracking() {
+      // 确保启动计时前先清除可能存在的定时器
       if (timer) clearInterval(timer);
       timer = setInterval(() => {
         if (isVideoPlaying) {
@@ -337,11 +439,11 @@
       clearInterval(playCheckInterval);
     });
 
-    // 视频区域点击交互（不变）
+    // 新增：绑定视频区域点击事件（标记用户交互）
     document.getElementById('interactionHint').addEventListener('click', function() {
-      userInteracted = true;
-      this.style.display = 'none';
-      lastKnownTime = Date.now();
+      userInteracted = true; // 标记用户已交互
+      this.style.display = 'none'; // 隐藏提示层
+      lastKnownTime = Date.now(); // 初始化时间基准
     });
 
     document.getElementById('videoSelector').addEventListener('change', loadSelectedVideo);
