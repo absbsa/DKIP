@@ -15,7 +15,7 @@
   </script>
 
   <style>
-    /* 视频容器交互提示层样式 */
+    /* 视频容器交互提示层 */
     .video-container {
       position: relative;
     }
@@ -172,9 +172,9 @@
     let currentVideoId = '';
     let currentVideoUrl = '';
     let userIp = '';
-    let isVideoPlaying = false;
+    let isVideoPlaying = false; // 视频是否正在播放
     let isWithinLimit = true;
-    let userInteracted = false; // 用户是否与视频区域交互过
+    let userInteracted = false; // 用户是否点击过视频区域
     const REQUIRED_SECONDS = 120;
     const IP_USAGE_KEY = 'ipDailyUsageCount';
     const DAILY_LIMIT = 2;
@@ -246,13 +246,14 @@
       return isWithinLimit && videoRecords[videoId].watchSeconds >= REQUIRED_SECONDS;
     }
 
-    // 核心优化：播放状态检测（精准控制计时启停）
+    // 核心优化：播放状态检测（实时控制计时启停）
     function checkVideoPlaying() {
-      // 未交互过的用户直接判定为未播放
+      // 未点击视频区域，直接判定为未播放
       if (!userInteracted) {
         if (isVideoPlaying) {
           isVideoPlaying = false;
-          clearInterval(timer); // 停止计时
+          clearInterval(timer); // 强制停止计时
+          timer = null;
           document.getElementById('manualHint').style.display = 'block';
         }
         return;
@@ -261,29 +262,31 @@
       const now = Date.now();
       const timeDiff = now - lastKnownTime;
 
-      // 播放中判定：连续3次时间差>1.5秒
-      if (timeDiff > 1500) {
+      // 播放中判定：连续2次时间差>1000ms（降低阈值，提高灵敏度）
+      if (timeDiff > 1000) {
         timeProgressCount++;
         lastKnownTime = now;
-        if (timeProgressCount >= 3 && !isVideoPlaying) {
+        // 连续2次检测到时间推进，判定为播放中
+        if (timeProgressCount >= 2 && !isVideoPlaying) {
           isVideoPlaying = true;
           startTracking(); // 启动计时
           document.getElementById('manualHint').style.display = 'none';
-          console.log('检测到视频播放，启动计时');
+          console.log('视频播放中，启动计时');
         }
       } else {
-        // 暂停判定：立即停止计时
+        // 暂停判定：时间差<1000ms，立即停止计时
         timeProgressCount = 0;
         if (isVideoPlaying) {
           isVideoPlaying = false;
-          clearInterval(timer); // 停止计时
+          clearInterval(timer); // 强制停止计时
+          timer = null;
           document.getElementById('manualHint').style.display = 'block';
-          console.log('视频暂停，停止计时');
+          console.log('视频已暂停，停止计时');
         }
       }
     }
 
-    // 手动计时
+    // 手动计时（备用）
     function manualStartTracking() {
       userInteracted = true;
       document.getElementById('interactionHint').style.display = 'none';
@@ -295,10 +298,12 @@
 
     // 加载视频
     async function loadSelectedVideo() {
-      if (currentVideoId) {
+      // 清除之前的定时器
+      if (timer) {
         clearInterval(timer);
-        clearInterval(playCheckInterval);
+        timer = null;
       }
+      if (playCheckInterval) clearInterval(playCheckInterval);
       
       // 重置所有状态
       lastKnownTime = 0;
@@ -326,8 +331,8 @@
       const videoFrame = document.getElementById('videoFrame');
       videoFrame.src = currentVideoUrl;
       
-      // 每500ms检测一次播放状态
-      playCheckInterval = setInterval(checkVideoPlaying, 500);
+      // 每300ms检测一次（提高检测频率，减少延迟）
+      playCheckInterval = setInterval(checkVideoPlaying, 300);
 
       document.getElementById('progressDisplay').textContent = "等待视频播放中...";
       document.getElementById('durationAlert').style.display = 'none';
@@ -386,11 +391,12 @@
       });
     }
 
-    // 计时逻辑
+    // 计时逻辑（仅在播放时运行）
     function startTracking() {
+      // 确保只启动一个定时器
       if (timer) clearInterval(timer);
       timer = setInterval(() => {
-        if (isVideoPlaying) { // 仅当播放状态为true时，才累加时长
+        if (isVideoPlaying) { // 双重保险：仅播放状态下才累加
           videoRecords[currentVideoId].watchSeconds++;
           if (!videoRecords[currentVideoId].isQualified && checkQualified(currentVideoId)) {
             videoRecords[currentVideoId].isQualified = true;
@@ -428,4 +434,23 @@
           'event_label': videoId,
           'value': record.watchSeconds,
           'is_qualified': record.isQualified,
-          'ip':
+          'ip': userIp,
+          'ip_usage_count': getIpUsageCount(),
+          'is_within_limit': isWithinLimit
+        });
+      });
+      clearInterval(timer);
+      clearInterval(playCheckInterval);
+    });
+
+    // 视频区域点击交互（必须点击后才可能启动计时）
+    document.getElementById('interactionHint').addEventListener('click', function() {
+      userInteracted = true;
+      this.style.display = 'none';
+      lastKnownTime = Date.now(); // 初始化时间基准
+    });
+
+    document.getElementById('videoSelector').addEventListener('change', loadSelectedVideo);
+  </script>
+</body>
+</html>
