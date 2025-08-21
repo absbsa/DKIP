@@ -2,20 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Video with Twitter Tracking</title>
+  <title>Video Tracking</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   
-  <!-- Google Analytics (GA4) - 已填入你的测量ID -->
+  <!-- Google Analytics (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-X0ZSRRF93P"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-X0ZSRRF93P'); // 已替换为你的实际GA4 ID
+    gtag('config', 'G-X0ZSRRF93P');
   </script>
 
   <style>
-    /* 完整CSS样式 */
     body {
       margin: 0;
       padding: 20px;
@@ -39,19 +38,12 @@
       height: 100%;
       border: none;
     }
-    .twitter-form {
-      text-align: center;
-      padding: 40px 20px;
-    }
-    input[type="text"] {
-      padding: 12px 20px;
-      width: 300px;
-      border: 2px solid #1DA1F2;
-      border-radius: 30px;
-      font-size: 16px;
-      margin-right: 10px;
+    .video-selector {
+      margin: 20px 0;
+      padding: 20px;
       background: #222;
-      color: white;
+      border-radius: 10px;
+      text-align: center;
     }
     button {
       padding: 12px 24px;
@@ -61,34 +53,38 @@
       border-radius: 30px;
       font-size: 16px;
       cursor: pointer;
+      margin-top: 10px;
     }
     button:hover {
       background: #0d8bd9;
-    }
-    .video-selector {
-      margin: 20px 0;
-      padding: 20px;
-      background: #222;
-      border-radius: 10px;
-    }
-    .form-note {
-      font-size: 14px;
-      color: #aaa;
-      margin-top: 10px;
     }
     .rule-note {
       font-size: 14px;
       color: #ffd700;
       margin-top: 5px;
     }
-    .limit-alert {
-      color: red;
-      margin-top: 10px;
-      display: none;
-    }
     .duration-alert {
       color: #4CAF50;
       margin-top: 10px;
+      display: none;
+    }
+    .progress-display {
+      color: #fff;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .video-history {
+      margin-top: 15px;
+      padding: 10px;
+      background: #333;
+      border-radius: 5px;
+      font-size: 13px;
+      text-align: left;
+    }
+    .ip-reminder {
+      color: #ff9800;
+      margin-top: 10px;
+      font-size: 14px;
       display: none;
     }
   </style>
@@ -103,42 +99,39 @@
         <option value="https://mivalyo.com/embed/649eym1t2485" data-id="video2">黄霄雲 2</option>
         <option value="https://mivalyo.com/embed/third-video-id" data-id="video3">视频 3</option>
       </select>
-    </div>
-
-    <!-- Twitter句柄输入表单 -->
-    <div class="twitter-form" id="twitterForm">
-      <h2>请输入你的Twitter句柄（不含@）</h2>
-      <p class="form-note">（用于统计抽奖，请勿乱填）</p>
-      <p class="rule-note">长于 5 分钟的视频，至少需要观看 10% 的时间</p>
-      <p class="limit-alert" id="limitAlert">同一IP 24小时内只能观看2次，已达上限</p>
-      <input type="text" id="twitterHandle" placeholder="例如：elonmusk" required>
-      <button onclick="verifyTwitter()">开始观看</button>
+      <p class="rule-note">观看满 120 秒才算合格</p>
+      <button onclick="startWatching()">开始观看</button>
+      
+      <!-- IP使用次数提醒 -->
+      <p class="ip-reminder" id="ipReminder"></p>
+      
+      <!-- 视频历史记录显示 -->
+      <div class="video-history" id="videoHistory">
+        观看记录：暂无
+      </div>
     </div>
 
     <!-- 视频容器 -->
     <div class="video-container" id="videoContainer">
-      <p class="duration-alert" id="durationAlert">观看满要求时长即可参与抽奖</p>
+      <p class="progress-display" id="progressDisplay">等待视频播放中...</p>
+      <p class="duration-alert" id="durationAlert">已达到有效观看时长（120秒）</p>
       <iframe id="videoFrame" allowfullscreen></iframe>
     </div>
   </div>
 
   <script>
-    // 完整JavaScript代码
-    let watchSeconds = 0;
     let timer = null;
-    let currentTwitterHandle = '';
     let currentVideoId = '';
     let currentVideoUrl = '';
     let userIp = '';
-    let isQualified = false; // 标记是否达到有效时长
-    let videoTotalSeconds = 0; // 视频总时长（秒）
-    const IP_WATCH_KEY = 'ipWatchCount';
-    const MAX_WATCH_TIMES = 6;
-    const EXPIRY_HOURS = 24;
-    const LONG_VIDEO_THRESHOLD = 300; // 5分钟（300秒），超过此值视为长视频
-    const LONG_VIDEO_REQUIRED_RATIO = 0.1; // 长视频需观看10%
+    let isVideoPlaying = false; // 标记视频是否正在播放
+    const REQUIRED_SECONDS = 120; // 固定120秒合格
+    const IP_USAGE_KEY = 'ipUsageCount'; // 存储IP使用次数的localStorage键名
+    
+    // 用对象存储每个视频的独立记录（键为videoId）
+    let videoRecords = {};
 
-    // 获取用户IP（使用免费API）
+    // 获取用户IP
     async function getIp() {
       try {
         const response = await fetch('https://api.ipify.org?format=json');
@@ -150,166 +143,223 @@
       }
     }
 
-    // 检查IP观看次数
-    function checkIpWatchTimes() {
+    // 记录并获取当前IP的使用次数
+    function getIpUsageCount() {
       const now = new Date().getTime();
-      const ipDataStr = localStorage.getItem(IP_WATCH_KEY) || '{}';
+      const ipDataStr = localStorage.getItem(IP_USAGE_KEY) || '{}';
       let ipData = JSON.parse(ipDataStr);
 
-      // 清理过期数据
-      Object.keys(ipData).forEach(ip => {
-        const records = ipData[ip].filter(record => {
-          return (now - record.timestamp) < EXPIRY_HOURS * 60 * 60 * 1000;
-        });
-        if (records.length === 0) {
-          delete ipData[ip];
-        } else {
-          ipData[ip] = records;
-        }
-      });
-
-      localStorage.setItem(IP_WATCH_KEY, JSON.stringify(ipData));
-
-      // 检查当前IP次数
-      const ipRecords = ipData[userIp] || [];
-      return ipRecords.length < MAX_WATCH_TIMES;
-    }
-
-    // 记录IP观看次数
-    function recordIpWatch() {
-      const now = new Date().getTime();
-      const ipDataStr = localStorage.getItem(IP_WATCH_KEY) || '{}';
-      let ipData = JSON.parse(ipDataStr);
-
+      // 初始化当前IP的记录（如果不存在）
       if (!ipData[userIp]) {
-        ipData[userIp] = [];
+        ipData[userIp] = {
+          count: 0,
+          lastReset: now // 记录最后重置时间（用于未来可能的过期清理）
+        };
       }
 
-      ipData[userIp].push({ timestamp: now });
-
-      // 清理过期数据
-      Object.keys(ipData).forEach(ip => {
-        const records = ipData[ip].filter(record => {
-          return (now - record.timestamp) < EXPIRY_HOURS * 60 * 60 * 1000;
-        });
-        if (records.length === 0) {
-          delete ipData[ip];
-        } else {
-          ipData[ip] = records;
-        }
-      });
-
-      localStorage.setItem(IP_WATCH_KEY, JSON.stringify(ipData));
+      // 返回当前次数（未递增）
+      return ipData[userIp].count;
     }
 
-    // 检查是否达到合格时长
-    function checkQualified() {
-      if (videoTotalSeconds === 0) return false; // 未获取到视频时长时暂不判断
-      
-      // 长视频（>5分钟）需观看10%，短视频默认60秒合格
-      const requiredSeconds = videoTotalSeconds > LONG_VIDEO_THRESHOLD 
-        ? videoTotalSeconds * LONG_VIDEO_REQUIRED_RATIO 
-        : 60;
-      
-      return watchSeconds >= Math.ceil(requiredSeconds);
+    // 递增IP使用次数并显示提醒（如果需要）
+    function incrementIpUsage() {
+      const now = new Date().getTime();
+      const ipDataStr = localStorage.getItem(IP_USAGE_KEY) || '{}';
+      let ipData = JSON.parse(ipDataStr);
+
+      // 初始化或递增计数
+      if (!ipData[userIp]) {
+        ipData[userIp] = {
+          count: 1,
+          lastReset: now
+        };
+      } else {
+        ipData[userIp].count++;
+      }
+
+      // 保存更新后的数据
+      localStorage.setItem(IP_USAGE_KEY, JSON.stringify(ipData));
+
+      // 检查是否需要显示提醒（第3次及以上观看时）
+      const currentCount = ipData[userIp].count;
+      if (currentCount >= 2) {
+        const reminderEl = document.getElementById('ipReminder');
+        reminderEl.textContent = `此IP已经使用过${currentCount}次`;
+        reminderEl.style.display = 'block';
+      }
     }
 
-    async function verifyTwitter() {
-      userIp = await getIp();
-      const canWatch = checkIpWatchTimes();
+    // 检查视频是否合格
+    function checkQualified(videoId) {
+      return videoRecords[videoId].watchSeconds >= REQUIRED_SECONDS;
+    }
 
-      if (!canWatch) {
-        document.getElementById('limitAlert').style.display = 'block';
-        return;
+    // 加载并播放选中的视频（保留历史记录）
+    async function loadSelectedVideo() {
+      // 先保存当前视频的记录（如果存在）
+      if (currentVideoId) {
+        clearInterval(timer); // 停止当前计时
       }
 
-      const handle = document.getElementById('twitterHandle').value.trim();
-      if (!handle) {
-        alert('请输入Twitter句柄');
-        return;
-      }
-
+      // 获取新选中的视频信息
       const selector = document.getElementById('videoSelector');
       currentVideoUrl = selector.value;
       currentVideoId = selector.options[selector.selectedIndex].dataset.id;
-      currentTwitterHandle = handle;
+      const videoName = selector.options[selector.selectedIndex].text;
 
-      document.getElementById('twitterForm').style.display = 'none';
-      document.getElementById('videoContainer').style.display = 'block';
+      // 如果是新视频，初始化记录；否则使用已保存的记录
+      if (!videoRecords[currentVideoId]) {
+        videoRecords[currentVideoId] = {
+          name: videoName,
+          watchSeconds: 0,
+          isQualified: false,
+          totalSeconds: 0
+        };
+      }
+
+      // 重置播放标记
+      isVideoPlaying = false;
+
+      // 更新视频播放器
       const videoFrame = document.getElementById('videoFrame');
       videoFrame.src = currentVideoUrl;
+      videoFrame.onplay = function() {
+        isVideoPlaying = true;
+        startTracking(); // 视频真正播放时才开始计时
+        console.log('视频开始播放，启动计时');
+      };
       
-      // 尝试获取视频时长（需视频加载完成后）
+      // 获取视频时长
       videoFrame.onloadedmetadata = function() {
-        // 部分视频平台可能因跨域限制无法获取时长，此处做兼容处理
         try {
-          videoTotalSeconds = Math.floor(videoFrame.duration);
+          videoRecords[currentVideoId].totalSeconds = Math.floor(videoFrame.duration);
         } catch (e) {
-          console.log('无法获取视频时长，将使用默认规则');
-          videoTotalSeconds = 0;
+          console.log('无法获取视频时长');
         }
       };
 
-      startTracking();
-      recordIpWatch();
+      // 显示当前视频的历史记录（初始为“等待播放”）
+      document.getElementById('progressDisplay').textContent = "等待视频播放中...";
+      document.getElementById('durationAlert').style.display = 'none';
+      updateHistoryDisplay();
 
-      // 上报开始事件
+      // 上报视频切换事件
+      gtag('event', 'video_switch', {
+        'event_category': 'video',
+        'event_label': currentVideoId,
+        'video_url': currentVideoUrl,
+        'ip': userIp,
+        'previous_watch_seconds': videoRecords[currentVideoId].watchSeconds,
+        'ip_usage_count': getIpUsageCount() // 增加IP使用次数上报
+      });
+    }
+
+    // 更新进度显示
+    function updateProgressDisplay() {
+      if (!isVideoPlaying) return; // 视频未播放时，不更新进度
+      
+      const record = videoRecords[currentVideoId];
+      document.getElementById('progressDisplay').textContent = 
+        `已观看: ${record.watchSeconds}秒 / 需观看: 120秒`;
+      document.getElementById('durationAlert').style.display = record.isQualified ? 'block' : 'none';
+    }
+
+    // 更新历史记录显示
+    function updateHistoryDisplay() {
+      let historyHtml = '观看记录：';
+      let hasRecords = false;
+      
+      Object.values(videoRecords).forEach(record => {
+        hasRecords = true;
+        const status = record.isQualified ? '✅ 已合格' : `⏱️ 已看${record.watchSeconds}秒`;
+        historyHtml += `<br>${record.name}: ${status}`;
+      });
+      
+      if (!hasRecords) historyHtml += '暂无';
+      document.getElementById('videoHistory').innerHTML = historyHtml;
+    }
+
+    async function startWatching() {
+      userIp = await getIp();
+      
+      // 递增并检查IP使用次数（首次点击"开始观看"时计数）
+      incrementIpUsage();
+      
+      // 显示视频容器
+      document.querySelector('.video-selector').style.display = 'block'; // 不隐藏选择器，方便切换
+      document.getElementById('videoContainer').style.display = 'block';
+      
+      // 加载选中的视频
+      await loadSelectedVideo();
+
+      // 上报开始事件，增加IP使用次数参数
       gtag('event', 'video_start', {
         'event_category': 'video',
         'event_label': currentVideoId,
-        'twitter_handle': currentTwitterHandle,
         'video_url': currentVideoUrl,
-        'ip': userIp
+        'ip': userIp,
+        'previous_watch_seconds': videoRecords[currentVideoId].watchSeconds,
+        'ip_usage_count': getIpUsageCount()
       });
     }
 
     function startTracking() {
-      watchSeconds = 0;
-      isQualified = false;
+      // 清除可能存在的旧定时器
+      if (timer) clearInterval(timer);
+      
       timer = setInterval(() => {
-        watchSeconds++;
-        
-        // 达到合格条件时上报
-        if (!isQualified && checkQualified()) {
-          isQualified = true;
-          document.getElementById('durationAlert').style.display = 'block';
-          gtag('event', 'video_qualified', {
-            'event_category': 'video',
-            'event_label': currentVideoId,
-            'twitter_handle': currentTwitterHandle,
-            'value': watchSeconds,
-            'video_url': currentVideoUrl,
-            'video_total_seconds': videoTotalSeconds
-          });
-        }
+        // 仅当视频播放时，才更新观看秒数
+        if (isVideoPlaying) {
+          videoRecords[currentVideoId].watchSeconds++;
+          
+          // 检查是否合格
+          if (!videoRecords[currentVideoId].isQualified && checkQualified(currentVideoId)) {
+            videoRecords[currentVideoId].isQualified = true;
+            gtag('event', 'video_qualified', {
+              'event_category': 'video',
+              'event_label': currentVideoId,
+              'value': videoRecords[currentVideoId].watchSeconds,
+              'video_url': currentVideoUrl,
+              'ip': userIp
+            });
+          }
 
-        // 每10秒上报进度
-        if (watchSeconds % 10 === 0) {
-          gtag('event', 'video_progress', {
-            'event_category': 'video',
-            'event_label': currentVideoId,
-            'twitter_handle': currentTwitterHandle,
-            'value': watchSeconds,
-            'video_url': currentVideoUrl
-          });
+          // 更新显示
+          updateProgressDisplay();
+          updateHistoryDisplay();
+
+          // 每10秒上报进度
+          if (videoRecords[currentVideoId].watchSeconds % 10 === 0) {
+            gtag('event', 'video_progress', {
+              'event_category': 'video',
+              'event_label': currentVideoId,
+              'value': videoRecords[currentVideoId].watchSeconds,
+              'video_url': currentVideoUrl,
+              'ip': userIp
+            });
+          }
         }
       }, 1000);
     }
 
+    // 页面关闭时保存所有视频的最终状态
     window.addEventListener("beforeunload", () => {
-      if (currentTwitterHandle) {
+      Object.keys(videoRecords).forEach(videoId => {
+        const record = videoRecords[videoId];
         gtag('event', 'video_end', {
           'event_category': 'video',
-          'event_label': currentVideoId,
-          'twitter_handle': currentTwitterHandle,
-          'value': watchSeconds,
-          'video_url': currentVideoUrl,
-          'is_qualified': isQualified,
-          'video_total_seconds': videoTotalSeconds
+          'event_label': videoId,
+          'value': record.watchSeconds,
+          'is_qualified': record.isQualified,
+          'ip': userIp,
+          'ip_usage_count': getIpUsageCount()
         });
-      }
+      });
       clearInterval(timer);
     });
+
+    // 绑定视频选择器的change事件：切换时加载对应视频并保留历史
+    document.getElementById('videoSelector').addEventListener('change', loadSelectedVideo);
   </script>
 </body>
 </html>
