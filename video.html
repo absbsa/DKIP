@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>视频任务最终版（实时监控播放时长）</title>
   <style>
-    /* 样式保持不变 */
+    /* 保持原有样式 */
     * {
       margin: 0;
       padding: 0;
@@ -92,6 +92,9 @@
       margin: 5px 0;
       font-size: 14px;
     }
+    .account-section {
+      margin: 5px 0;
+    }
   </style>
 </head>
 <body>
@@ -101,7 +104,9 @@
       <select id="videoSelector">
         <option value="https://mivalyo.com/embed/6suaa9gg9y7y" data-name="黄霄雲earnvids 1">黄霄雲earnvids 1</option>
         <option value="https://mivalyo.com/embed/649eym1t2485" data-name="黄霄雲earnvids 2">黄霄雲earnvids 2</option>
-        <option value="https://other-domain.com/embed/xxx" data-name="其他视频 1">其他视频 1</option>
+        <option value="https://bigwings.io/d/wgyv6xx6lu7p" data-name="黄霄雲bigwings 1">黄霄雲bigwings 1</option>
+        <option value="https://bigwings.io/d/1oo8t2gz2tk9" data-name="黄霄雲bigwings 2">黄霄雲bigwings 2</option>
+        <option value="https://bigwings.io/d/7wndmp8dmwkt" data-name="黄霄雲bigwings 3">黄霄雲bigwings 3</option>
       </select>
     </div>
     <div class="rule">
@@ -114,7 +119,7 @@
     </div>
     <div class="username-display" id="usernameDisplay"></div>
     <button onclick="startTask()">开始观看</button>
-    <div class="status" id="statusText"></div> <!-- 状态区域留空，不显示内容 -->
+    <div class="status" id="statusText"></div>
     <div class="retry-notice" id="retryNotice"></div>
     <div class="video-wrapper">
       <div class="video-container">
@@ -135,18 +140,19 @@
     // earnvids API配置
     const EARNVIDS_API_KEY = "42634dsn9d5valpvutn5g";
     const EARNVIDS_BASE_URL = "https://earnvidsapi.com/api";
+    // bigwings API配置
+    const BIGWINGS_API_KEY = "1765x21wg8xg3bo8wfb7";
+    const BIGWINGS_BASE_URL = "https://bigwings.io/api";
 
 
     // 1. 本地存储记录管理（静默去重和限制）
     const STORAGE_KEY = 'videoTaskRecords';
 
-    // 获取本地所有记录
     function getLocalRecords() {
       const data = localStorage.getItem(STORAGE_KEY) || '{"records":[]}';
       return JSON.parse(data).records;
     }
 
-    // 保存记录到本地存储
     function saveRecord(record) {
       const records = getLocalRecords();
       records.push({
@@ -156,17 +162,15 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ records }));
     }
 
-    // 检查是否为重复记录（同一IP+视频链接，24小时内）
     function checkIpVideoLimit(ip, videoUrl) {
       const now = Date.now();
-      const dayMs = 24 * 60 * 60 * 1000; // 24小时毫秒数
-      // 过滤同一IP+视频链接且在24小时内的记录
+      const dayMs = 24 * 60 * 60 * 1000;
       const duplicateRecords = getLocalRecords().filter(record => 
         record.ip === ip && 
         record.videoUrl === videoUrl && 
         now - record.timestamp <= dayMs
       );
-      return duplicateRecords.length > 0; // 存在则返回true（限制）
+      return duplicateRecords.length > 0;
     }
 
 
@@ -181,7 +185,7 @@
     }
 
 
-    // 3. 获取earnvids账户信息
+    // 3. earnvids相关接口
     async function getEarnvidsAccountInfo() {
       try {
         const response = await fetch(
@@ -195,18 +199,16 @@
             filesTotal: data.result.files_total || 0
           };
         } else {
-          console.error('获取账户信息失败:', data.msg);
+          console.error('earnvids账户信息失败:', data.msg);
           return null;
         }
       } catch (error) {
-        console.error('账户信息请求异常:', error);
+        console.error('earnvids账户请求异常:', error);
         return null;
       }
     }
 
-
-    // 4. 获取earnvids总播放次数
-    async function getTotalPlays() {
+    async function getEarnvidsTotalPlays() {
       try {
         const response = await fetch(
           `${EARNVIDS_BASE_URL}/account/stats?key=${EARNVIDS_API_KEY}`,
@@ -218,38 +220,119 @@
             return total + parseInt(day.views || 0);
           }, 0);
         } else {
-          console.error('获取播放统计失败:', data.msg);
+          console.error('earnvids播放统计失败:', data.msg);
           return 0;
         }
       } catch (error) {
-        console.error('播放统计请求异常:', error);
+        console.error('earnvids播放请求异常:', error);
         return 0;
       }
     }
 
 
-    // 5. 加载并显示账户信息
-    async function loadAccountInfo() {
-      const accountInfoEl = document.getElementById('accountInfo');
-      accountInfoEl.textContent = '加载账户信息中...';
-      
-      const [accountInfo, totalPlays] = await Promise.all([
-        getEarnvidsAccountInfo(),
-        getTotalPlays()
-      ]);
+    // 4. bigwings相关接口
+    // 获取bigwings账户余额
+    async function getBigwingsAccountInfo() {
+      try {
+        const response = await fetch(
+          `${BIGWINGS_BASE_URL}/account/info?key=${BIGWINGS_API_KEY}`,
+          { timeout: 10000 }
+        );
+        const data = await response.json();
+        if (data.status === 200) {
+          return {
+            balance: data.result.balance || '0.00'
+          };
+        } else {
+          console.error('bigwings账户信息失败:', data.msg);
+          return null;
+        }
+      } catch (error) {
+        console.error('bigwings账户请求异常:', error);
+        return null;
+      }
+    }
 
-      if (accountInfo && totalPlays !== null) {
-        accountInfoEl.innerHTML = `
-          earnvids账户总播放次数: <strong>${totalPlays}</strong> 次 | 
-          账户余额: <strong>${accountInfo.balance}</strong> 美元
-        `;
-      } else {
-        accountInfoEl.textContent = '账户信息加载失败，请刷新页面重试';
+    // 获取bigwings总播放量和总收益
+    async function getBigwingsTotalStats() {
+      try {
+        const response = await fetch(
+          `${BIGWINGS_BASE_URL}/account/stats?key=${BIGWINGS_API_KEY}&last=365`, // 获取全年数据
+          { timeout: 10000 }
+        );
+        const data = await response.json();
+        if (data.status === 200 && data.result.length > 0) {
+          let totalViews = 0;
+          let totalProfit = 0;
+          
+          // 累加所有天数的播放量和收益
+          data.result.forEach(day => {
+            totalViews += parseInt(day.views || 0);
+            totalProfit += parseFloat(day.profit_total || 0);
+          });
+          
+          return {
+            totalViews: totalViews,
+            totalProfit: totalProfit.toFixed(5) // 保留5位小数
+          };
+        } else {
+          console.error('bigwings统计失败:', data.msg);
+          return { totalViews: 0, totalProfit: '0.00000' };
+        }
+      } catch (error) {
+        console.error('bigwings统计请求异常:', error);
+        return { totalViews: 0, totalProfit: '0.00000' };
       }
     }
 
 
-    // 6. 启动任务
+    // 5. 加载并显示所有账户信息
+    async function loadAccountInfo() {
+      const accountInfoEl = document.getElementById('accountInfo');
+      accountInfoEl.textContent = '账户信息加载中...';
+      
+      // 并行获取所有需要的数据
+      const [
+        earnvidsAccount,
+        earnvidsPlays,
+        bigwingsAccount,
+        bigwingsStats
+      ] = await Promise.all([
+        getEarnvidsAccountInfo(),
+        getEarnvidsTotalPlays(),
+        getBigwingsAccountInfo(),
+        getBigwingsTotalStats()
+      ]);
+
+      // 构建显示内容
+      let content = '';
+      
+      // 添加earnvids信息
+      if (earnvidsAccount && earnvidsPlays !== null) {
+        content += `<div class="account-section">
+          earnvids账户总播放次数: <strong>${earnvidsPlays}</strong> 次 | 
+          账户余额: <strong>${earnvidsAccount.balance}</strong> 美元
+        </div>`;
+      } else {
+        content += '<div class="account-section">earnvids账户信息加载失败</div>';
+      }
+      
+      // 添加bigwings信息
+      if (bigwingsAccount && bigwingsStats) {
+        content += `<div class="account-section">
+          bigwings总播放量: <strong>${bigwingsStats.totalViews}</strong> 次 | 
+          总收益: <strong>${bigwingsStats.totalProfit}</strong> 美元 | 
+          账户余额: <strong>${bigwingsAccount.balance || '0.00'}</strong> 美元
+        </div>`;
+      } else {
+        content += '<div class="account-section">bigwings账户信息加载失败</div>';
+      }
+      
+      accountInfoEl.innerHTML = content;
+    }
+
+
+    // 6. 启动任务（保持不变）
     async function startTask() {
       if (localTimer) clearInterval(localTimer);
       localWatchSeconds = 0;
@@ -269,49 +352,36 @@
         return;
       }
 
-      // 不显示"视频加载中..."，直接加载视频
       iframe.style.display = 'block';
       iframe.src = videoUrl;
 
-      // 修改：保留执行逻辑，移除页面显示
       iframe.onload = function() {
-        // 移除"视频加载完成，开始计时..."的显示
-        
         localTimer = setInterval(() => {
           localWatchSeconds++;
-          // 移除"正在观看...（已观看：X秒）"的显示
-          
           if (localWatchSeconds >= 120) {
             clearInterval(localTimer);
-            // 移除"已达标！实际观看：120秒"的显示
-            handleQualification(videoUrl); // 保留达标后处理逻辑
+            handleQualification(videoUrl);
           }
         }, 1000);
       };
 
-      // 修改：保留执行逻辑，移除页面显示
       iframe.onerror = function() {
-        // 移除"视频加载失败，请重试"的显示
-        if (localTimer) clearInterval(localTimer); // 保留清除定时器逻辑
+        if (localTimer) clearInterval(localTimer);
       };
     }
 
 
-    // 7. 达标后处理（静默检查限制，不提示）
+    // 7. 达标后处理（保持不变）
     async function handleQualification(videoUrl) {
-      // 检查同一IP+视频链接24小时内是否已记录
       const isLimited = checkIpVideoLimit(userIp, videoUrl);
       if (isLimited) {
-        // 重复记录，静默不处理（不提示，不上报）
         return;
       }
-
-      // 无限制，尝试上报
       reportToBackend(120, videoUrl);
     }
 
 
-    // 8. 上报数据（带重试机制）
+    // 8. 上报数据（保持不变）
     async function reportToBackend(finalSeconds, videoUrl, retryCount = 3) {
       const reportData = {
         username: currentUsername,
@@ -339,11 +409,7 @@
 
         const result = await response.json();
         if (result.success) {
-          // 上报成功后保存记录（用于后续限制检查）
-          saveRecord({
-            ip: userIp,
-            videoUrl: videoUrl
-          });
+          saveRecord({ ip: userIp, videoUrl: videoUrl });
           retryNotice.textContent = '数据上报成功！';
           console.log('上报成功:', result);
         } else {
@@ -352,7 +418,6 @@
         }
       } catch (error) {
         if (retryCount > 0) {
-          console.log(`上报失败（剩余${retryCount - 1}次）:`, error.message);
           setTimeout(() => {
             reportToBackend(finalSeconds, videoUrl, retryCount - 1);
           }, 3000);
@@ -364,13 +429,13 @@
     }
 
 
-    // 9. 页面关闭清理
+    // 9. 页面关闭清理（保持不变）
     window.addEventListener('beforeunload', () => {
       if (localTimer) clearInterval(localTimer);
     });
 
 
-    // 10. 初始化
+    // 10. 初始化（保持不变）
     (async () => {
       userIp = await getIp();
       await loadAccountInfo();
