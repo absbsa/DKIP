@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>视频任务最终版（实时监控播放时长）</title>
   <style>
-    /* 保留原有样式 */
+    /* 样式保持不变 */
     * {
       margin: 0;
       padding: 0;
@@ -114,7 +114,7 @@
     </div>
     <div class="username-display" id="usernameDisplay"></div>
     <button onclick="startTask()">开始观看</button>
-    <div class="status" id="statusText">等待操作...</div>
+    <div class="status" id="statusText"></div> <!-- 状态区域留空，不显示内容 -->
     <div class="retry-notice" id="retryNotice"></div>
     <div class="video-wrapper">
       <div class="video-container">
@@ -269,28 +269,30 @@
         return;
       }
 
-      document.getElementById('statusText').innerText = '视频加载中...';
+      // 不显示"视频加载中..."，直接加载视频
       iframe.style.display = 'block';
       iframe.src = videoUrl;
 
+      // 修改：保留执行逻辑，移除页面显示
       iframe.onload = function() {
-        document.getElementById('statusText').innerText = '视频加载完成，开始计时...';
+        // 移除"视频加载完成，开始计时..."的显示
         
         localTimer = setInterval(() => {
           localWatchSeconds++;
-          document.getElementById('statusText').innerText = `正在观看...（已观看：${localWatchSeconds}秒）`;
+          // 移除"正在观看...（已观看：X秒）"的显示
           
           if (localWatchSeconds >= 120) {
             clearInterval(localTimer);
-            document.getElementById('statusText').innerText = `已达标！实际观看：120秒`;
-            handleQualification(videoUrl); // 达标后处理
+            // 移除"已达标！实际观看：120秒"的显示
+            handleQualification(videoUrl); // 保留达标后处理逻辑
           }
         }, 1000);
       };
 
+      // 修改：保留执行逻辑，移除页面显示
       iframe.onerror = function() {
-        document.getElementById('statusText').innerText = '视频加载失败，请重试';
-        if (localTimer) clearInterval(localTimer);
+        // 移除"视频加载失败，请重试"的显示
+        if (localTimer) clearInterval(localTimer); // 保留清除定时器逻辑
       };
     }
 
