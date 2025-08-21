@@ -1,62 +1,227 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-  <!-- 原有头部代码不变 -->
+  <meta charset="UTF-8" />
+  <title>视频任务最终版</title>
+  <style>
+    /* 全局样式重置+自适应布局 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "微软雅黑", sans-serif;
+    }
+
+    body {
+      background: #222;
+      color: #fff;
+      text-align: center;
+      padding: 30px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #2c2c2c;
+      border-radius: 12px;
+    }
+
+    h2 {
+      font-size: 24px;
+      margin: 20px 0;
+    }
+
+    .dropdown {
+      margin: 20px 0;
+    }
+
+    select {
+      padding: 10px 15px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      background: #3a3a3a;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .rule {
+      text-align: left;
+      margin: 20px 0;
+      line-height: 1.6;
+      color: #ffd700;
+    }
+
+    button {
+      padding: 12px 35px;
+      font-size: 16px;
+      border-radius: 25px;
+      border: none;
+      background: #1da1f2;
+      color: #fff;
+      cursor: pointer;
+      transition: 0.3s;
+      margin: 10px 0;
+    }
+
+    button:hover {
+      background: #0d8bd9;
+    }
+
+    .status {
+      margin: 20px 0;
+      font-size: 16px;
+      min-height: 30px;
+    }
+
+    .ip-alert {
+      color: #ff4444;
+      margin-top: 10px;
+    }
+
+    /* 用户名显示区域 */
+    .username-display {
+      color: #4caf50;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    /* 视频容器 - 限制最大尺寸 */
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 30px auto;
+      border: 2px solid #444;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    /* 视频容器保持16:9比例但限制最大高度 */
+    .video-container {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-bottom: 56.25%; /* 16:9比例 */
+      max-height: 500px;
+    }
+
+    iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      border: none;
+    }
+  </style>
 </head>
+
 <body>
   <div class="container">
-    <!-- 原有页面结构不变 -->
+    <h2>选择视频</h2>
+    <div class="dropdown">
+      <select id="videoSelector">
+        <option value="https://mivalyo.com/embed/6suaa9gg9y7y" data-name="黄霄雲 1">黄霄雲 1</option>
+        <option value="https://mivalyo.com/embed/649eym1t2485" data-name="黄霄雲 2">黄霄雲 2</option>
+      </select>
+    </div>
+    <div class="rule">
+      点击视频开始按钮，连续点击直至无广告弹出，不能屏蔽广告，弹出后不管<br>
+      如点击开始后无广告，连续点击页面直至看到视频进度条<br>
+      每个视频需观看满 <span style="color: #4caf50;">120 秒</span> 才算合格
+      24小时内1个ip只能使用2次
+    </div>
+    <!-- 显示当前用户名 -->
+    <div class="username-display" id="usernameDisplay"></div>
+    <button onclick="startTask()">开始观看</button>
+    <div class="status" id="statusText">等待操作...</div>
+    <div class="ip-alert" id="ipAlert"></div>
+    <!-- 视频容器 -->
+    <div class="video-wrapper">
+      <div class="video-container">
+        <iframe id="videoFrame" allowfullscreen="false" webkitallowfullscreen="false" mozallowfullscreen="false"></iframe>
+      </div>
+    </div>
   </div>
 
   <script>
-    // 核心变量（原有变量不变）
+    // 核心变量
     let timer = null;
     let watchSeconds = 0;
     let isTracking = false;
     let useCount = 0;
-    let userIp = ''; 
-    let currentUsername = ''; 
+    let userIp = '';
+    let currentUsername = '';
     const iframe = document.getElementById('videoFrame');
     const selector = document.getElementById('videoSelector');
+    
+    // 后端服务地址（已替换为Render线上地址）
+    const backendUrl = 'https://video-backend-nmeq.onrender.com';
 
-    // 新增：后端服务地址（替换为你的 Render 公网地址）
-    const backendUrl = 'https://video-backend-nmeq.onrender.com'; 
+    // 获取用户IP
+    async function getIp() {
+      try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        return (await res.json()).ip;
+      } catch (err) {
+        return 'unknown-ip';
+      }
+    }
 
-    // 获取IP（原有逻辑不变）
-    async function getIp() { /* ... 保持不变 ... */ }
+    // 检查24小时内使用次数
+    function checkUseCount() {
+      const data = localStorage.getItem('videoTaskUseCount') || '{"count":0,"reset":0}';
+      const { count, reset } = JSON.parse(data);
+      const now = Date.now();
+      // 超过24小时重置计数
+      if (now - reset > 24 * 60 * 60 * 1000) {
+        localStorage.setItem('videoTaskUseCount', JSON.stringify({ count: 0, reset: now }));
+        return 0;
+      }
+      return count;
+    }
 
-    // 次数管理（原有逻辑不变）
-    function checkUseCount() { /* ... 保持不变 ... */ }
-    function updateUseCount() { /* ... 保持不变 ... */ }
+    // 更新使用次数
+    function updateUseCount() {
+      const data = localStorage.getItem('videoTaskUseCount') || '{"count":0,"reset":0}';
+      const { count, reset } = JSON.parse(data);
+      const newCount = count + 1;
+      localStorage.setItem('videoTaskUseCount', JSON.stringify({ count: newCount, reset: reset }));
+      return newCount;
+    }
 
-    // 启动任务（新增上报逻辑）
+    // 启动观看任务
     async function startTask() {
-      // 1. 输入用户名（原有逻辑不变）
+      // 验证用户名
       const username = prompt('请输入您的用户名（必填）：', '');
       if (!username || !username.trim()) {
         alert('用户名不能为空，请重新输入！');
         return;
       }
-      currentUsername = username.trim(); 
+      currentUsername = username.trim();
       document.getElementById('usernameDisplay').innerText = `当前用户：${currentUsername}`;
 
-      // 2. 校验视频选择（原有逻辑不变）
+      // 验证视频选择
       const videoUrl = selector.value;
       if (!videoUrl.trim()) {
         alert('请选择有效视频');
         return;
       }
 
-      // 3. 获取并提示使用次数（原有逻辑不变）
+      // 显示使用次数
       useCount = checkUseCount();
       document.getElementById('ipAlert').innerText = `这是24小时内第${useCount + 1}次使用`;
 
-      // 4. 初始化视频加载（原有逻辑不变）
+      // 加载视频
       document.getElementById('statusText').innerText = '视频加载中...';
       iframe.style.display = 'block';
       iframe.src = videoUrl;
 
-      // 5. 监听iframe加载状态（修改：达标后调用上报）
+      // 视频加载完成后启动计时
       iframe.onload = function() {
         document.getElementById('statusText').innerText = '视频加载完成，请点击播放开始计时';
         startTimer();
@@ -67,32 +232,33 @@
       };
     }
 
-    // 播放后启动计时（新增：达标后调用上报接口）
+    // 开始计时
     function startTimer() {
       if (isTracking) return;
       isTracking = true;
       
+      // 更新使用次数
       useCount = updateUseCount();
       document.getElementById('ipAlert').innerText = `这是24小时内第${useCount}次使用`;
       document.getElementById('statusText').innerText = '正在计时...（已观看：0秒）';
       
+      // 每秒更新计时
       timer = setInterval(() => {
         watchSeconds++;
         document.getElementById('statusText').innerText = `正在计时...（已观看：${watchSeconds}秒）`;
         
+        // 观看满120秒后上报数据
         if (watchSeconds >= 120) {
           clearInterval(timer);
           document.getElementById('statusText').innerText = '已达标！累计观看120秒';
-          
-          // 新增：调用后端接口上报数据
-          reportToBackend(); 
+          reportToBackend(); // 调用上报函数
         }
       }, 1000);
     }
 
-    // 新增：对接后端接口的上报函数
+    // 上报数据到后端
     async function reportToBackend() {
-      const data = {
+      const reportData = {
         username: currentUsername,
         ip: userIp,
         videoUrl: selector.value,
@@ -100,34 +266,34 @@
       };
 
       try {
-        const res = await fetch(`${backendUrl}/api/report`, {
+        const response = await fetch(`${backendUrl}/api/report`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(data)
+          body: JSON.stringify(reportData)
         });
 
-        const result = await res.json();
+        const result = await response.json();
         if (result.success) {
-          alert('数据上报成功！');
-          console.log('上报结果：', result);
+          alert('数据上报成功！您已完成任务');
+          console.log('上报成功:', result);
         } else {
-          alert('数据上报失败，请重试');
-          console.error('上报失败：', result);
+          alert(`上报失败: ${result.message}`);
+          console.error('上报失败:', result);
         }
       } catch (error) {
-        alert('网络错误，上报失败');
-        console.error('上报异常：', error);
+        alert('网络错误，数据上报失败，请稍后重试');
+        console.error('上报异常:', error);
       }
     }
 
-    // 页面关闭清理（原有逻辑不变）
+    // 页面关闭时清理计时器
     window.addEventListener('beforeunload', () => {
       clearInterval(timer);
     });
 
-    // 初始化：获取IP并检查次数（原有逻辑不变）
+    // 初始化：获取IP并检查使用次数
     (async () => {
       userIp = await getIp();
       useCount = checkUseCount();
