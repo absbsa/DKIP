@@ -1,76 +1,112 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8" />
-  <title>视频任务</title>
+  <title>视频任务最终版</title>
   <style>
+    /* 全局样式重置+自适应布局 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "微软雅黑", sans-serif;
+    }
+
     body {
       background: #222;
       color: #fff;
       text-align: center;
-      padding: 50px;
-      font-family: "微软雅黑", sans-serif;
+      padding: 30px;
     }
+
     .container {
-      max-width: 600px;
+      max-width: 800px;
       margin: 0 auto;
+      padding: 20px;
+      background: #2c2c2c;
+      border-radius: 12px;
     }
+
     h2 {
-      margin-bottom: 20px;
+      font-size: 24px;
+      margin: 20px 0;
     }
+
+    .dropdown {
+      margin: 20px 0;
+    }
+
+    select {
+      padding: 10px 15px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      background: #3a3a3a;
+      color: #fff;
+      cursor: pointer;
+    }
+
     .rule {
       text-align: left;
       margin: 20px 0;
       line-height: 1.6;
       color: #ffd700;
     }
-    .video-select {
-      margin: 20px 0;
-    }
-    select {
-      padding: 8px 12px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: none;
-      background: #3a3a3a;
-      color: #fff;
-    }
+
     button {
-      padding: 12px 30px;
+      padding: 12px 35px;
+      font-size: 16px;
       border-radius: 25px;
       border: none;
-      cursor: pointer;
-      font-size: 16px;
       background: #1da1f2;
       color: #fff;
+      cursor: pointer;
       transition: 0.3s;
-      margin-top: 20px;
+      margin: 10px 0;
     }
+
     button:hover {
       background: #0d8bd9;
     }
+
     .status {
       margin: 20px 0;
       font-size: 16px;
       min-height: 30px;
     }
+
     .ip-alert {
       color: #ff4444;
       margin-top: 10px;
     }
-    video {
+
+    /* 视频容器自适应 */
+    .video-wrapper {
+      position: relative;
       width: 100%;
-      height: auto;
+      height: 0;
+      padding-bottom: 56.25%;
+      /* 16:9比例 */
       margin-top: 30px;
+    }
+
+    video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       display: none;
       border-radius: 8px;
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h2>选择视频</h2>
-    <div class="video-select">
+    <div class="dropdown">
       <select id="videoSelector">
         <option value="https://mivalyo.com/embed/6suaa9gg9y7y" data-name="黄霄雲 1">黄霄雲 1</option>
         <option value="https://mivalyo.com/embed/649eym1t2485" data-name="黄霄雲 2">黄霄雲 2</option>
@@ -84,85 +120,96 @@
     <button onclick="startTask()">开始观看</button>
     <div class="status" id="statusText">等待操作...</div>
     <div class="ip-alert" id="ipAlert"></div>
-    <!-- 视频容器 -->
-    <video id="videoPlayer" controls>
-      <source src="" type="video/mp4">
-    </video>
+    <!-- 自适应视频容器 -->
+    <div class="video-wrapper">
+      <video id="videoPlayer" controls>
+        <source src="" type="video/mp4">
+      </video>
+    </div>
   </div>
 
   <script>
-    // 核心变量
+    // 核心变量（极简可靠逻辑）
     let timer = null;       // 计时定时器
     let watchSeconds = 0;   // 已观看时长
     let isTracking = false; // 是否计时中
-    let ipCount = 0;        // IP当日使用次数
-    const DAILY_LIMIT = 2;  // 每日限制次数
+    let useCount = 0;       // 24小时内使用次数
     const video = document.getElementById('videoPlayer');
     const selector = document.getElementById('videoSelector');
 
-    // 获取IP（国内轻量API）
+    // 轻量IP获取（国内优先）
     async function getIp() {
       try {
-        const res = await fetch('https://api.ip.sb/jsonip');
+        const res = await fetch('https://api.ipify.org?format=json');
         return (await res.json()).ip;
       } catch (err) {
-        return 'unknown';
+        return 'unknown-ip';
       }
     }
 
-    // 检查IP使用次数（本地存储）
-    function checkIpUsage() {
-      const data = localStorage.getItem('videoTaskIp') || '{"count":0,"reset":0}';
+    // 次数管理（本地存储+每日重置）
+    function checkUseCount() {
+      const data = localStorage.getItem('videoTaskUseCount') || '{"count":0,"reset":0}';
       const { count, reset } = JSON.parse(data);
       const now = Date.now();
       if (now - reset > 24 * 60 * 60 * 1000) {
-        localStorage.setItem('videoTaskIp', JSON.stringify({ count: 0, reset: now }));
+        localStorage.setItem('videoTaskUseCount', JSON.stringify({ count: 0, reset: now }));
         return 0;
       }
       return count;
     }
 
-    // 启动任务（开始观看流程）
+    function updateUseCount() {
+      const data = localStorage.getItem('videoTaskUseCount') || '{"count":0,"reset":0}';
+      const { count, reset } = JSON.parse(data);
+      const newCount = count + 1;
+      localStorage.setItem('videoTaskUseCount', JSON.stringify({ count: newCount, reset: reset }));
+      return newCount;
+    }
+
+    // 启动任务（完整流程）
     async function startTask() {
-      // 1. 获取当前选择的视频
+      // 1. 校验视频选择
       const videoUrl = selector.value;
-      if (!videoUrl) {
-        alert('请选择视频');
+      if (!videoUrl.trim()) {
+        alert('请选择有效视频');
         return;
       }
 
-      // 2. 检查IP限制
-      ipCount = checkIpUsage();
-      if (ipCount >= DAILY_LIMIT) {
-        document.getElementById('ipAlert').innerText = `24小时内仅能使用${DAILY_LIMIT}次，已用完`;
-        return;
-      }
+      // 2. 获取并提示使用次数
+      useCount = checkUseCount();
+      document.getElementById('ipAlert').innerText = `这是24小时内第${useCount + 1}次使用`;
 
-      // 3. 加载视频
+      // 3. 初始化视频加载
       document.getElementById('statusText').innerText = '视频加载中...';
       video.style.display = 'block';
       video.querySelector('source').src = videoUrl;
-      video.load(); // 强制重新加载
+      video.load(); // 强制加载
 
-      // 4. 视频播放后启动计时
+      // 4. 绑定播放事件（自动重试加载）
+      video.addEventListener('canplay', () => {
+        document.getElementById('statusText').innerText = '点击播放按钮开始计时';
+      });
+      video.addEventListener('error', () => {
+        document.getElementById('statusText').innerText = '视频加载失败，重试中...';
+        video.load(); // 加载失败自动重试
+      });
       video.addEventListener('play', startTimer);
     }
 
-    // 视频播放时启动计时
+    // 播放后启动计时（严格120秒）
     function startTimer() {
       if (isTracking) return;
       isTracking = true;
+      // 更新使用次数
+      useCount = updateUseCount();
+      document.getElementById('ipAlert').innerText = `这是24小时内第${useCount}次使用`;
       document.getElementById('statusText').innerText = '正在计时...';
       timer = setInterval(() => {
         watchSeconds++;
         if (watchSeconds >= 120) {
           clearInterval(timer);
-          document.getElementById('statusText').innerText = '已达标！观看满120秒';
-          // 增加IP次数
-          localStorage.setItem('videoTaskIp', JSON.stringify({
-            count: ipCount + 1,
-            reset: JSON.parse(localStorage.getItem('videoTaskIp')).reset
-          }));
+          document.getElementById('statusText').innerText = '已达标！累计观看120秒';
         }
       }, 1000);
     }
@@ -170,17 +217,15 @@
     // 页面关闭清理
     window.addEventListener('beforeunload', () => {
       clearInterval(timer);
-      console.log(`最终观看时长：${watchSeconds}秒`);
+      console.log(`观看记录：${watchSeconds}秒（达标：${watchSeconds >= 120}）`);
     });
 
-    // 初始化IP检查
+    // 初始化次数检查
     (async () => {
-      const ip = await getIp();
-      ipCount = checkIpUsage();
-      if (ipCount >= DAILY_LIMIT) {
-        document.getElementById('ipAlert').innerText = `当前IP(${ip})今日已用${ipCount}次，超限`;
-      }
+      useCount = checkUseCount();
+      document.getElementById('ipAlert').innerText = `这是24小时内第${useCount}次使用`;
     })();
   </script>
 </body>
+
 </html>
