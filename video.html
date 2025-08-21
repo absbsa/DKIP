@@ -87,6 +87,12 @@
       font-size: 14px;
       display: none;
     }
+    .ip-limit-alert {
+      color: #ff4444;
+      margin-top: 10px;
+      font-size: 14px;
+      display: none;
+    }
     .manual-start提示 {
       color: #ff4444;
       margin-top: 10px;
@@ -104,7 +110,7 @@
         <option value="https://mivalyo.com/embed/649eym1t2485" data-id="video2">黄霄雲 2</option>
         <option value="https://mivalyo.com/embed/third-video-id" data-id="video3">视频 3</option>
       </select>
-      <p class="rule-note">观看满 120 秒才算合格</p>
+      <p class="rule-note">每个视频观看满 120 秒才算合格</p>
       <button onclick="startWatching()">开始观看</button>
       
       <!-- 手动开始计时按钮（备用） -->
@@ -114,6 +120,7 @@
       
       <!-- IP使用次数提醒 -->
       <p class="ip-reminder" id="ipReminder"></p>
+      <p class="ip-limit-alert" id="ipLimitAlert"></p>
       
       <!-- 视频历史记录显示 -->
       <div class="video-history" id="videoHistory">
@@ -141,8 +148,10 @@
     let currentVideoUrl = '';
     let userIp = '';
     let isVideoPlaying = false; // 标记视频是否正在播放
+    let isWithinLimit = true; // 是否在24小时限制内
     const REQUIRED_SECONDS = 120; // 固定120秒合格
-    const IP_USAGE_KEY = 'ipUsageCount'; // 存储IP使用次数的localStorage键名
+    const IP_USAGE_KEY = 'ipDailyUsageCount'; // 存储IP每日使用次数的localStorage键名
+    const DAILY_LIMIT = 2; // 24小时内最大使用次数
     
     // 用对象存储每个视频的独立记录（键为videoId）
     let videoRecords = {};
@@ -159,15 +168,34 @@
       }
     }
 
-    // 记录并获取当前IP的使用次数
+    // 检查是否超过24小时，重置计数
+    function checkAndResetDailyCount(ipData) {
+      const now = new Date().getTime();
+      const oneDay = 24 * 60 * 60 * 1000; // 24小时毫秒数
+      
+      // 如果超过24小时或首次记录，重置计数
+      if (!ipData.lastReset || now - ipData.lastReset > oneDay) {
+        ipData.count = 0;
+        ipData.lastReset = now;
+      }
+      return ipData;
+    }
+
+    // 记录并获取当前IP的当日使用次数
     function getIpUsageCount() {
       const now = new Date().getTime();
       const ipDataStr = localStorage.getItem(IP_USAGE_KEY) || '{}';
       let ipData = JSON.parse(ipDataStr);
 
+      // 初始化当前IP的记录（如果不存在）
       if (!ipData[userIp]) {
         ipData[userIp] = { count: 0, lastReset: now };
       }
+      
+      // 检查是否需要重置每日计数
+      ipData[userIp] = checkAndResetDailyCount(ipData[userIp]);
+      localStorage.setItem(IP_USAGE_KEY, JSON.stringify(ipData));
+      
       return ipData[userIp].count;
     }
 
@@ -177,24 +205,42 @@
       const ipDataStr = localStorage.getItem(IP_USAGE_KEY) || '{}';
       let ipData = JSON.parse(ipDataStr);
 
+      // 初始化当前IP的记录（如果不存在）
       if (!ipData[userIp]) {
-        ipData[userIp] = { count: 1, lastReset: now };
-      } else {
-        ipData[userIp].count++;
+        ipData[userIp] = { count: 0, lastReset: now };
       }
-
+      
+      // 检查是否需要重置每日计数
+      ipData[userIp] = checkAndResetDailyCount(ipData[userIp]);
+      
+      // 递增计数
+      ipData[userIp].count++;
       localStorage.setItem(IP_USAGE_KEY, JSON.stringify(ipData));
-
+      
       const currentCount = ipData[userIp].count;
-      if (currentCount >= 2) {
-        document.getElementById('ipReminder').textContent = `此IP已经使用过${currentCount}次`;
-        document.getElementById('ipReminder').style.display = 'block';
+      // 判断是否超过限制
+      isWithinLimit = currentCount <= DAILY_LIMIT;
+      
+      // 显示相应提示
+      const reminderEl = document.getElementById('ipReminder');
+      const limitAlertEl = document.getElementById('ipLimitAlert');
+      
+      if (currentCount <= DAILY_LIMIT) {
+        // 未超过限制时的提示
+        reminderEl.textContent = `24小时内此IP可使用${DAILY_LIMIT}次，已使用${currentCount}次`;
+        reminderEl.style.display = 'block';
+        limitAlertEl.style.display = 'none';
+      } else {
+        // 超过限制时的提示
+        limitAlertEl.textContent = `24小时内此IP只能使用${DAILY_LIMIT}次，已使用${currentCount}次，不计入有效`;
+        limitAlertEl.style.display = 'block';
+        reminderEl.style.display = 'none';
       }
     }
 
-    // 检查视频是否合格
+    // 检查视频是否合格（只有在限制内才计入有效）
     function checkQualified(videoId) {
-      return videoRecords[videoId].watchSeconds >= REQUIRED_SECONDS;
+      return isWithinLimit && videoRecords[videoId].watchSeconds >= REQUIRED_SECONDS;
     }
 
     // 检测视频是否在播放（通过时间差判断）
@@ -235,7 +281,7 @@
       isVideoPlaying = true;
       startTracking();
       document.getElementById('manualHint').style.display = 'none';
-      alert('已手动开始计时，将记录观看时长');
+      alert(isWithinLimit ? '已手动开始计时，将记录观看时长' : '已手动开始计时，但本次不计入有效次数');
     }
 
     // 加载并播放选中的视频
@@ -260,9 +306,13 @@
           name: videoName,
           watchSeconds: 0,
           isQualified: false,
-          totalSeconds: 0
+          totalSeconds: 0,
+          isEffective: true // 标记是否为有效次数内的观看
         };
       }
+      
+      // 更新是否有效状态
+      videoRecords[currentVideoId].isEffective = isWithinLimit;
 
       const videoFrame = document.getElementById('videoFrame');
       videoFrame.src = currentVideoUrl;
@@ -283,7 +333,8 @@
         'video_url': currentVideoUrl,
         'ip': userIp,
         'previous_watch_seconds': videoRecords[currentVideoId].watchSeconds,
-        'ip_usage_count': getIpUsageCount()
+        'ip_usage_count': getIpUsageCount(),
+        'is_within_limit': isWithinLimit
       });
     }
 
@@ -292,8 +343,14 @@
       if (!isVideoPlaying) return;
       
       const record = videoRecords[currentVideoId];
-      document.getElementById('progressDisplay').textContent = 
-        `已观看: ${record.watchSeconds}秒 / 需观看: 120秒`;
+      let progressText = `已观看: ${record.watchSeconds}秒 / 需观看: 120秒`;
+      
+      // 如果超过限制，提示不计入有效
+      if (!isWithinLimit) {
+        progressText += '（本次观看不计入有效）';
+      }
+      
+      document.getElementById('progressDisplay').textContent = progressText;
       document.getElementById('durationAlert').style.display = record.isQualified ? 'block' : 'none';
     }
 
@@ -304,7 +361,11 @@
       
       Object.values(videoRecords).forEach(record => {
         hasRecords = true;
-        const status = record.isQualified ? '✅ 已合格' : `⏱️ 已看${record.watchSeconds}秒`;
+        let status = record.isQualified ? '✅ 已合格' : `⏱️ 已看${record.watchSeconds}秒`;
+        // 标记是否有效
+        if (!record.isEffective) {
+          status += '（不计入有效）';
+        }
         historyHtml += `<br>${record.name}: ${status}`;
       });
       
@@ -314,7 +375,7 @@
 
     async function startWatching() {
       userIp = await getIp();
-      incrementIpUsage();
+      incrementIpUsage(); // 先更新计数和限制状态
       
       document.getElementById('videoContainer').style.display = 'block';
       await loadSelectedVideo();
@@ -325,7 +386,8 @@
         'video_url': currentVideoUrl,
         'ip': userIp,
         'previous_watch_seconds': videoRecords[currentVideoId].watchSeconds,
-        'ip_usage_count': getIpUsageCount()
+        'ip_usage_count': getIpUsageCount(),
+        'is_within_limit': isWithinLimit
       });
     }
 
@@ -336,6 +398,7 @@
         if (isVideoPlaying) {
           videoRecords[currentVideoId].watchSeconds++;
           
+          // 检查是否合格（只有在限制内才会标记合格）
           if (!videoRecords[currentVideoId].isQualified && checkQualified(currentVideoId)) {
             videoRecords[currentVideoId].isQualified = true;
             gtag('event', 'video_qualified', {
@@ -343,7 +406,8 @@
               'event_label': currentVideoId,
               'value': videoRecords[currentVideoId].watchSeconds,
               'video_url': currentVideoUrl,
-              'ip': userIp
+              'ip': userIp,
+              'is_within_limit': isWithinLimit
             });
           }
 
@@ -356,7 +420,8 @@
               'event_label': currentVideoId,
               'value': videoRecords[currentVideoId].watchSeconds,
               'video_url': currentVideoUrl,
-              'ip': userIp
+              'ip': userIp,
+              'is_within_limit': isWithinLimit
             });
           }
         }
@@ -373,7 +438,8 @@
           'value': record.watchSeconds,
           'is_qualified': record.isQualified,
           'ip': userIp,
-          'ip_usage_count': getIpUsageCount()
+          'ip_usage_count': getIpUsageCount(),
+          'is_within_limit': isWithinLimit
         });
       });
       clearInterval(timer);
