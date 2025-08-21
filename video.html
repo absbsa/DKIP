@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>视频任务最终版（实时监控播放时长）</title>
   <style>
-    /* 样式保持不变 */
+    /* 样式保持不变，新增账户信息显示样式 */
     * {
       margin: 0;
       padding: 0;
@@ -54,7 +54,13 @@
     }
     button:hover { background: #0d8bd9; }
     .status { margin: 20px 0; font-size: 16px; min-height: 30px; }
-    .ip-alert { color: #ff4444; margin-top: 10px; }
+    .account-info { 
+      color: #4cd964; 
+      margin: 10px 0; 
+      padding: 10px; 
+      background: #333; 
+      border-radius: 6px;
+    }
     .username-display { color: #4caf50; margin: 10px 0; font-weight: bold; }
     .video-wrapper {
       position: relative;
@@ -96,12 +102,14 @@
       点击视频开始按钮，连续点击直至无广告弹出，不能屏蔽广告，弹出后不管<br>
       如点击开始后无广告，连续点击页面直至看到视频进度条<br>
       每个视频需观看满 <span style="color: #4caf50;">120 秒</span> 才算合格
-      24小时内1个ip只能使用2次
+    </div>
+    <!-- 新增账户信息显示区域 -->
+    <div class="account-info" id="accountInfo">
+      账户信息加载中...
     </div>
     <div class="username-display" id="usernameDisplay"></div>
     <button onclick="startTask()">开始观看</button>
     <div class="status" id="statusText">等待操作...</div>
-    <div class="ip-alert" id="ipAlert"></div>
     <div class="video-wrapper">
       <div class="video-container">
         <iframe id="videoFrame" allowfullscreen="false" webkitallowfullscreen="false" mozallowfullscreen="false"></iframe>
@@ -110,17 +118,19 @@
   </div>
 
   <script>
-    // 核心变量（移除视频源事件相关变量，新增本地计时器变量）
+    // 核心变量（移除24小时次数管理相关变量）
     let localTimer = null; // 本地计时器
     let localWatchSeconds = 0; // 本地累计时长（秒）
-    let useCount = 0;
     let userIp = '';
     let currentUsername = '';
     const iframe = document.getElementById('videoFrame');
     const selector = document.getElementById('videoSelector');
     const backendUrl = 'https://video-backend-nmeq.onrender.com';
+    // earnvids API配置
+    const EARNVIDS_API_KEY = "42634dsn9d5valpvutn5g";
+    const EARNVIDS_BASE_URL = "https://earnvidsapi.com/api";
 
-    // 2. 获取用户IP（保持不变）
+    // 1. 获取用户IP（保持不变）
     async function getIp() {
       try {
         const res = await fetch('https://api.ipify.org?format=json');
@@ -130,26 +140,74 @@
       }
     }
 
-    // 3. 次数管理（保持不变）
-    function checkUseCount() {
-      const data = localStorage.getItem('videoTaskUseCount') || '{"count":0,"reset":0}';
-      const { count, reset } = JSON.parse(data);
-      const now = Date.now();
-      if (now - reset > 24 * 60 * 60 * 1000) {
-        localStorage.setItem('videoTaskUseCount', JSON.stringify({ count: 0, reset: now }));
-        return 0;
+    // 2. 获取earnvids账户信息（余额）
+    async function getEarnvidsAccountInfo() {
+      try {
+        const response = await fetch(
+          `${EARNVIDS_BASE_URL}/account/info?key=${EARNVIDS_API_KEY}`,
+          { timeout: 10000 }
+        );
+        const data = await response.json();
+        if (data.status === 200) {
+          return {
+            balance: data.result.balance || '0.00',
+            filesTotal: data.result.files_total || 0
+          };
+        } else {
+          console.error('获取账户信息失败:', data.msg);
+          return null;
+        }
+      } catch (error) {
+        console.error('账户信息请求异常:', error);
+        return null;
       }
-      return count;
-    }
-    function updateUseCount() {
-      const data = localStorage.getItem('videoTaskUseCount') || '{"count":0,"reset":0}';
-      const { count, reset } = JSON.parse(data);
-      const newCount = count + 1;
-      localStorage.setItem('videoTaskUseCount', JSON.stringify({ count: newCount, reset: reset }));
-      return newCount;
     }
 
-    // 4. 启动任务（核心修改：使用本地计时器）
+    // 3. 获取earnvids总播放次数
+    async function getTotalPlays() {
+      try {
+        const response = await fetch(
+          `${EARNVIDS_BASE_URL}/account/stats?key=${EARNVIDS_API_KEY}`,
+          { timeout: 10000 }
+        );
+        const data = await response.json();
+        if (data.status === 200 && data.result.length > 0) {
+          // 计算所有日期的播放量总和
+          return data.result.reduce((total, day) => {
+            return total + parseInt(day.views || 0);
+          }, 0);
+        } else {
+          console.error('获取播放统计失败:', data.msg);
+          return 0;
+        }
+      } catch (error) {
+        console.error('播放统计请求异常:', error);
+        return 0;
+      }
+    }
+
+    // 4. 加载并显示账户信息
+    async function loadAccountInfo() {
+      const accountInfoEl = document.getElementById('accountInfo');
+      accountInfoEl.textContent = '加载账户信息中...';
+      
+      // 并行请求账户信息和播放统计
+      const [accountInfo, totalPlays] = await Promise.all([
+        getEarnvidsAccountInfo(),
+        getTotalPlays()
+      ]);
+
+      if (accountInfo && totalPlays !== null) {
+        accountInfoEl.innerHTML = `
+          账户总播放次数: <strong>${totalPlays}</strong> 次 | 
+          账户余额: <strong>${accountInfo.balance}</strong> 元
+        `;
+      } else {
+        accountInfoEl.textContent = '账户信息加载失败，请刷新页面重试';
+      }
+    }
+
+    // 5. 启动任务（移除24小时次数相关逻辑）
     async function startTask() {
       // 清除可能存在的旧计时器
       if (localTimer) clearInterval(localTimer);
@@ -170,10 +228,6 @@
         alert('请选择有效视频');
         return;
       }
-
-      // 显示使用次数
-      useCount = checkUseCount();
-      document.getElementById('ipAlert').innerText = `这是24小时内第${useCount + 1}次使用`;
 
       // 加载视频
       document.getElementById('statusText').innerText = '视频加载中...';
@@ -205,7 +259,7 @@
       };
     }
 
-    // 5. 上报真实播放时长（保持优化后的错误提示）
+    // 6. 上报数据（保持不变）
     async function reportToBackend(finalSeconds) {
       const reportData = {
         username: currentUsername,
@@ -234,16 +288,16 @@
       }
     }
 
-    // 6. 页面关闭清理（停止计时器）
+    // 7. 页面关闭清理（停止计时器）
     window.addEventListener('beforeunload', () => {
       if (localTimer) clearInterval(localTimer);
     });
 
-    // 7. 初始化（保持不变）
+    // 8. 初始化（加载IP和账户信息）
     (async () => {
       userIp = await getIp();
-      useCount = checkUseCount();
-      document.getElementById('ipAlert').innerText = `这是24小时内第${useCount}次使用`;
+      // 加载earnvids账户信息（总播放次数和余额）
+      await loadAccountInfo();
     })();
   </script>
 </body>
