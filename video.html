@@ -81,6 +81,13 @@
       margin-top: 10px;
     }
 
+    /* 新增：用户名显示区域 */
+    .username-display {
+      color: #4caf50;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
     /* 视频容器 - 限制最大尺寸，确保不会全屏 */
     .video-wrapper {
       position: relative;
@@ -128,10 +135,12 @@
       每个视频需观看满 <span style="color: #4caf50;">120 秒</span> 才算合格
       24小时内1个ip只能使用2次
     </div>
+    <!-- 新增：显示当前用户名 -->
+    <div class="username-display" id="usernameDisplay"></div>
     <button onclick="startTask()">开始观看</button>
     <div class="status" id="statusText">等待操作...</div>
     <div class="ip-alert" id="ipAlert"></div>
-    <!-- 视频容器 - 确保在本页面播放且不全屏 -->
+    <!-- 视频容器 -->
     <div class="video-wrapper">
       <div class="video-container">
         <iframe id="videoFrame" allowfullscreen="false" webkitallowfullscreen="false" mozallowfullscreen="false"></iframe>
@@ -141,10 +150,12 @@
 
   <script>
     // 核心变量
-    let timer = null;       // 计时定时器
-    let watchSeconds = 0;   // 已观看时长
-    let isTracking = false; // 是否计时中
-    let useCount = 0;       // 24小时内使用次数
+    let timer = null;
+    let watchSeconds = 0;
+    let isTracking = false;
+    let useCount = 0;
+    let userIp = ''; // 新增：存储用户IP
+    let currentUsername = ''; // 新增：存储当前用户名
     const iframe = document.getElementById('videoFrame');
     const selector = document.getElementById('videoSelector');
 
@@ -158,12 +169,11 @@
       }
     }
 
-    // 次数管理
+    // 次数管理（保持不变）
     function checkUseCount() {
       const data = localStorage.getItem('videoTaskUseCount') || '{"count":0,"reset":0}';
       const { count, reset } = JSON.parse(data);
       const now = Date.now();
-      // 超过24小时重置计数
       if (now - reset > 24 * 60 * 60 * 1000) {
         localStorage.setItem('videoTaskUseCount', JSON.stringify({ count: 0, reset: now }));
         return 0;
@@ -179,40 +189,49 @@
       return newCount;
     }
 
-    // 启动任务
+    // 启动任务（新增用户名验证）
     async function startTask() {
-      // 1. 校验视频选择
+      // 1. 新增：要求输入用户名
+      const username = prompt('请输入您的用户名（必填）：', '');
+      if (!username || !username.trim()) {
+        alert('用户名不能为空，请重新输入！');
+        return; // 不输入用户名则无法继续
+      }
+      currentUsername = username.trim(); // 保存用户名
+      document.getElementById('usernameDisplay').innerText = `当前用户：${currentUsername}`; // 显示用户名
+
+      // 2. 校验视频选择（保持不变）
       const videoUrl = selector.value;
       if (!videoUrl.trim()) {
         alert('请选择有效视频');
         return;
       }
 
-      // 2. 获取并提示使用次数
+      // 3. 获取并提示使用次数（保持不变）
       useCount = checkUseCount();
       document.getElementById('ipAlert').innerText = `这是24小时内第${useCount + 1}次使用`;
 
-      // 3. 初始化视频加载
+      // 4. 初始化视频加载（保持不变）
       document.getElementById('statusText').innerText = '视频加载中...';
       iframe.style.display = 'block';
       iframe.src = videoUrl;
 
-      // 4. 监听iframe加载状态
+      // 5. 监听iframe加载状态（修改：传递用户名到计时函数）
       iframe.onload = function() {
         document.getElementById('statusText').innerText = '视频加载完成，请点击播放开始计时';
-        startTimer(); // 加载完成后自动开始计时
+        startTimer(); // 加载完成后启动计时
       };
 
-      // 处理加载错误
       iframe.onerror = function() {
         document.getElementById('statusText').innerText = '视频加载失败，请重试';
       };
     }
 
-    // 播放后启动计时
+    // 播放后启动计时（修改：关联用户名）
     function startTimer() {
       if (isTracking) return;
       isTracking = true;
+      
       // 更新使用次数
       useCount = updateUseCount();
       document.getElementById('ipAlert').innerText = `这是24小时内第${useCount}次使用`;
@@ -222,20 +241,29 @@
         watchSeconds++;
         document.getElementById('statusText').innerText = `正在计时...（已观看：${watchSeconds}秒）`;
         
+        // 达标时准备上报数据（后续对接后端）
         if (watchSeconds >= 120) {
           clearInterval(timer);
           document.getElementById('statusText').innerText = '已达标！累计观看120秒';
+          // 这里后续会添加：调用上报函数
+          console.log('准备上报数据：', {
+            username: currentUsername,
+            ip: userIp,
+            watchSeconds: watchSeconds,
+            videoUrl: selector.value
+          });
         }
       }, 1000);
     }
 
-    // 页面关闭清理
+    // 页面关闭清理（保持不变）
     window.addEventListener('beforeunload', () => {
       clearInterval(timer);
     });
 
-    // 初始化次数检查
+    // 初始化：获取IP并检查次数
     (async () => {
+      userIp = await getIp(); // 提前获取IP并保存
       useCount = checkUseCount();
       document.getElementById('ipAlert').innerText = `这是24小时内第${useCount}次使用`;
     })();
