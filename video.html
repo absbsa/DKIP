@@ -174,10 +174,25 @@
     }
 
 
-    // 2. 获取用户IP
+    // 2. 工具函数：带超时的fetch请求（解决原生fetch无超时问题）
+    async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error; // 抛出超时或其他错误
+      }
+    }
+
+
+    // 3. 获取用户IP
     async function getIp() {
       try {
-        const res = await fetch('https://api.ipify.org?format=json');
+        const res = await fetchWithTimeout('https://api.ipify.org?format=json', {}, 10000);
         return (await res.json()).ip;
       } catch (err) {
         return 'unknown-ip';
@@ -185,12 +200,16 @@
     }
 
 
-    // 3. earnvids相关接口
+    // 4. earnvids相关接口（保持不变，适配英文字段）
     async function getEarnvidsAccountInfo() {
       try {
-        const response = await fetch(
+        const response = await fetchWithTimeout(
           `${EARNVIDS_BASE_URL}/account/info?key=${EARNVIDS_API_KEY}`,
-          { timeout: 10000 }
+          { 
+            headers: { "Accept": "*/*" },
+            mode: "cors"
+          },
+          10000
         );
         const data = await response.json();
         if (data.status === 200) {
@@ -210,9 +229,13 @@
 
     async function getEarnvidsTotalPlays() {
       try {
-        const response = await fetch(
+        const response = await fetchWithTimeout(
           `${EARNVIDS_BASE_URL}/account/stats?key=${EARNVIDS_API_KEY}`,
-          { timeout: 10000 }
+          { 
+            headers: { "Accept": "*/*" },
+            mode: "cors"
+          },
+          10000
         );
         const data = await response.json();
         if (data.status === 200 && data.result.length > 0) {
@@ -230,18 +253,25 @@
     }
 
 
-    // 4. bigwings相关接口
-    // 获取bigwings账户余额
+    // 5. bigwings相关接口（修正为中文字段解析）
+    // 获取bigwings账户余额（适配中文响应字段）
     async function getBigwingsAccountInfo() {
       try {
-        const response = await fetch(
+        const response = await fetchWithTimeout(
           `${BIGWINGS_BASE_URL}/account/info?key=${BIGWINGS_API_KEY}`,
-          { timeout: 10000 }
+          { 
+            headers: { "Accept": "*/*" },
+            mode: "cors" // 显式跨域模式
+          },
+          10000
         );
         const data = await response.json();
-        if (data.status === 200) {
+        
+        // 关键修正：bigwings响应使用中文状态字段“状态”而非“status”
+        if (data.状态 === 200) {
+          const result = data.结果 || {}; // 中文“结果”字段
           return {
-            balance: data.result.balance || '0.00'
+            balance: result.余额 || '0.00000' // 中文“余额”字段
           };
         } else {
           console.error('bigwings账户信息失败:', data.msg);
@@ -253,27 +283,34 @@
       }
     }
 
-    // 获取bigwings总播放量和总收益
+    // 获取bigwings总播放量和总收益（适配中文字段）
     async function getBigwingsTotalStats() {
       try {
-        const response = await fetch(
-          `${BIGWINGS_BASE_URL}/account/stats?key=${BIGWINGS_API_KEY}&last=365`, // 获取全年数据
-          { timeout: 10000 }
+        const response = await fetchWithTimeout(
+          `${BIGWINGS_BASE_URL}/account/stats?key=${BIGWINGS_API_KEY}&last=365`,
+          { 
+            headers: { "Accept": "*/*" },
+            mode: "cors"
+          },
+          10000
         );
         const data = await response.json();
-        if (data.status === 200 && data.result.length > 0) {
+        
+        // 关键修正：使用中文“状态”判断成功
+        if (data.状态 === 200) {
+          const statsList = data.结果 || []; // 中文“结果”数组
           let totalViews = 0;
           let totalProfit = 0;
           
-          // 累加所有天数的播放量和收益
-          data.result.forEach(day => {
-            totalViews += parseInt(day.views || 0);
-            totalProfit += parseFloat(day.profit_total || 0);
+          // 累加中文字段：“浏览量”（播放量）和“利润总额”（总收益）
+          statsList.forEach(day => {
+            totalViews += parseInt(day.浏览量 || 0);
+            totalProfit += parseFloat(day.利润总额 || 0);
           });
           
           return {
             totalViews: totalViews,
-            totalProfit: totalProfit.toFixed(5) // 保留5位小数
+            totalProfit: totalProfit.toFixed(5)
           };
         } else {
           console.error('bigwings统计失败:', data.msg);
@@ -286,12 +323,12 @@
     }
 
 
-    // 5. 加载并显示所有账户信息
+    // 6. 加载并显示所有账户信息
     async function loadAccountInfo() {
       const accountInfoEl = document.getElementById('accountInfo');
       accountInfoEl.textContent = '账户信息加载中...';
       
-      // 并行获取所有需要的数据
+      // 并行获取所有数据
       const [
         earnvidsAccount,
         earnvidsPlays,
@@ -322,7 +359,7 @@
         content += `<div class="account-section">
           bigwings总播放量: <strong>${bigwingsStats.totalViews}</strong> 次 | 
           总收益: <strong>${bigwingsStats.totalProfit}</strong> 美元 | 
-          账户余额: <strong>${bigwingsAccount.balance || '0.00'}</strong> 美元
+          账户余额: <strong>${bigwingsAccount.balance || '0.00000'}</strong> 美元
         </div>`;
       } else {
         content += '<div class="account-section">bigwings账户信息加载失败</div>';
@@ -332,7 +369,7 @@
     }
 
 
-    // 6. 启动任务（保持不变）
+    // 7. 启动任务（保持不变）
     async function startTask() {
       if (localTimer) clearInterval(localTimer);
       localWatchSeconds = 0;
@@ -371,7 +408,7 @@
     }
 
 
-    // 7. 达标后处理（保持不变）
+    // 8. 达标后处理（保持不变）
     async function handleQualification(videoUrl) {
       const isLimited = checkIpVideoLimit(userIp, videoUrl);
       if (isLimited) {
@@ -381,7 +418,7 @@
     }
 
 
-    // 8. 上报数据（保持不变）
+    // 9. 上报数据（保持不变）
     async function reportToBackend(finalSeconds, videoUrl, retryCount = 3) {
       const reportData = {
         username: currentUsername,
@@ -396,12 +433,11 @@
       }
 
       try {
-        const response = await fetch(`${backendUrl}/api/report`, {
+        const response = await fetchWithTimeout(`${backendUrl}/api/report`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(reportData),
-          timeout: 10000
-        });
+          body: JSON.stringify(reportData)
+        }, 10000);
 
         if (!response.ok) {
           throw new Error(`服务器响应错误: ${response.status}`);
@@ -429,13 +465,13 @@
     }
 
 
-    // 9. 页面关闭清理（保持不变）
+    // 10. 页面关闭清理（保持不变）
     window.addEventListener('beforeunload', () => {
       if (localTimer) clearInterval(localTimer);
     });
 
 
-    // 10. 初始化（保持不变）
+    // 11. 初始化
     (async () => {
       userIp = await getIp();
       await loadAccountInfo();
