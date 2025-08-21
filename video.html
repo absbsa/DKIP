@@ -2,10 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>视频观看计时（纯手动版）</title>
+  <title>视频观看计时（交互关联版）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   
-  <!-- 保留GA统计 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-X0ZSRRF93P"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -15,80 +14,23 @@
   </script>
 
   <style>
-    /* 保持你熟悉的样式 */
-    body {
-      margin: 0;
-      padding: 20px;
-      background: #111;
-      color: white;
-      font-family: Arial, sans-serif;
+    body { margin: 0; padding: 20px; background: #111; color: white; font-family: Arial, sans-serif; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .video-selector { background: #222; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0; }
+    .video-container { width: 100%; height: 70vh; margin-top: 20px; position: relative; display: none; }
+    iframe { width: 100%; height: 100%; border: none; background: #000; }
+    .overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+      z-index: 10; cursor: pointer;
     }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .video-selector {
-      background: #222;
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-      margin: 20px 0;
-    }
-    .video-container {
-      width: 100%;
-      height: 70vh;
-      margin-top: 20px;
-      display: none;
-    }
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #000;
-    }
-    button {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 30px;
-      font-size: 16px;
-      cursor: pointer;
-      margin: 0 5px;
-    }
-    .start-btn {
-      background: #4CAF50;
-      color: white;
-    }
-    .stop-btn {
-      background: #ff4444;
-      color: white;
-    }
-    .status {
-      margin: 15px 0;
-      font-size: 18px;
-    }
-    .qualified {
-      color: #4CAF50;
-      font-weight: bold;
-      display: none;
-    }
-    .history {
-      background: #333;
-      padding: 10px;
-      border-radius: 5px;
-      text-align: left;
-      margin-top: 15px;
-    }
-    .rule {
-      color: #ffd700;
-      font-size: 14px;
-      margin: 10px 0;
-      line-height: 1.6;
-    }
-    .ip-info {
-      color: #ff9800;
-      margin: 10px 0;
-      font-size: 14px;
-    }
+    .overlay-text { font-size: 20px; text-align: center; padding: 20px; }
+    button { padding: 12px 24px; background: #1DA1F2; color: white; border: none; border-radius: 30px; cursor: pointer; margin: 10px; }
+    .status { margin: 15px 0; font-size: 18px; }
+    .qualified { color: #4CAF50; font-weight: bold; display: none; }
+    .history { background: #333; padding: 10px; border-radius: 5px; text-align: left; margin-top: 15px; }
+    .warning { color: #ff4444; margin: 10px 0; display: none; }
+    .ip-info { color: #ff9800; margin: 10px 0; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -101,43 +43,44 @@
         <option value="https://mivalyo.com/embed/third-video-id">视频 3</option>
       </select>
       
-      <p class="rule">
-        1. 点击"加载视频"按钮<br>
-        2. 视频开始播放后，点击"开始计时"<br>
-        3. 观看满120秒后会提示"已合格"<br>
-        4. 暂停/结束时点击"停止计时"
-      </p>
-      
       <button onclick="loadVideo()">加载视频</button>
-      <button class="start-btn" onclick="startTimer()">开始计时</button>
-      <button class="stop-btn" onclick="stopTimer()">停止计时</button>
+      <button onclick="startTracking()">开始计时</button>
+      <button onclick="stopTracking()">停止计时</button>
       
       <div class="status">
         已观看: <span id="watchTime">0</span>秒 / 需观看: 120秒
       </div>
       <div class="qualified" id="qualifiedAlert">✅ 已达到有效观看时长！</div>
+      <div class="warning" id="inactiveWarning">⚠️ 检测到未活跃观看，计时已暂停</div>
       
       <div class="ip-info" id="ipInfo"></div>
       <div class="history" id="history">观看记录：暂无</div>
     </div>
     
     <div class="video-container" id="videoContainer">
+      <!-- 视频覆盖层：必须点击才能开始交互 -->
+      <div class="overlay" id="videoOverlay">
+        <div class="overlay-text">点击视频区域开始观看（需先点击此处激活）</div>
+      </div>
       <iframe id="videoFrame" allowfullscreen></iframe>
     </div>
   </div>
 
   <script>
     let timer = null;
+    let activityTimer = null; // 检测用户活跃的定时器
     let currentSeconds = 0;
     let currentVideoUrl = '';
     let currentVideoName = '';
-    let isTiming = false; // 标记是否正在计时
-    const REQUIRED = 120; // 要求的秒数
-    const records = {}; // 记录每个视频的观看时长
+    let isTracking = false;
+    let isActive = false; // 标记用户是否在活跃观看
+    const REQUIRED = 120;
+    const records = {};
     let userIp = '';
-    const DAILY_LIMIT = 2; // 每天限制次数
+    const DAILY_LIMIT = 2;
+    const INACTIVE_THRESHOLD = 10000; // 10秒无活动视为未观看
 
-    // 获取用户IP
+    // 获取IP
     async function getIp() {
       try {
         const res = await fetch('https://api.ipify.org?format=json');
@@ -150,18 +93,15 @@
       }
     }
 
-    // 更新IP使用信息
+    // 更新IP信息
     function updateIpInfo() {
       const today = new Date().toDateString();
       const key = `ip_${userIp}_${today}`;
-      let count = localStorage.getItem(key) || 0;
-      count = parseInt(count);
-      
+      let count = parseInt(localStorage.getItem(key) || 0);
       const remaining = Math.max(0, DAILY_LIMIT - count);
       document.getElementById('ipInfo').textContent = 
         `24小时内剩余有效次数: ${remaining}/${DAILY_LIMIT}（IP: ${userIp}）`;
-      
-      return count < DAILY_LIMIT; // 是否在限制内
+      return count < DAILY_LIMIT;
     }
 
     // 加载视频
@@ -170,77 +110,102 @@
       currentVideoUrl = select.value;
       currentVideoName = select.options[select.selectedIndex].text;
       
-      // 重置当前计时
-      stopTimer();
+      stopTracking();
       currentSeconds = records[currentVideoUrl]?.seconds || 0;
       document.getElementById('watchTime').textContent = currentSeconds;
       document.getElementById('qualifiedAlert').style.display = 'none';
-      
-      // 显示视频
+      document.getElementById('videoOverlay').style.display = 'flex'; // 显示覆盖层
       document.getElementById('videoContainer').style.display = 'block';
       document.getElementById('videoFrame').src = currentVideoUrl;
       
-      // 初始化记录
       if (!records[currentVideoUrl]) {
-        records[currentVideoUrl] = {
-          name: currentVideoName,
-          seconds: 0,
-          qualified: false
-        };
+        records[currentVideoUrl] = { name: currentVideoName, seconds: 0, qualified: false };
       }
-      
       updateHistory();
     }
 
-    // 开始计时（核心：点一次就持续计时，直到点停止）
-    function startTimer() {
-      if (isTiming || !currentVideoUrl) return;
+    // 激活视频交互（必须点击覆盖层才能开始）
+    document.getElementById('videoOverlay').addEventListener('click', function() {
+      this.style.display = 'none'; // 隐藏覆盖层
+      isActive = true; // 标记为已激活
+      document.getElementById('inactiveWarning').style.display = 'none';
+    });
+
+    // 检测用户活跃（鼠标移动/点击视为在观看）
+    function resetActivity() {
+      isActive = true;
+      document.getElementById('inactiveWarning').style.display = 'none';
       
-      // 检查IP限制
+      // 重置无活动定时器
+      clearTimeout(activityTimer);
+      activityTimer = setTimeout(() => {
+        isActive = false; // 超过阈值视为未活跃
+        document.getElementById('inactiveWarning').style.display = 'block';
+      }, INACTIVE_THRESHOLD);
+    }
+
+    // 开始计时（必须满足：1. 点击过视频覆盖层；2. 用户活跃）
+    function startTracking() {
+      // 验证：必须点击过视频覆盖层才能开始
+      if (document.getElementById('videoOverlay').style.display !== 'none') {
+        alert('请先点击视频区域的覆盖层激活观看');
+        return;
+      }
+      if (isTracking) return;
+      
       const isWithinLimit = updateIpInfo();
       if (!isWithinLimit) {
-        alert('已超过今日有效次数限制，计时仍会记录但不计入有效');
+        alert('已超过今日有效次数限制');
       }
       
-      isTiming = true;
-      // 每1秒加1，绝对不会只记1秒
+      isTracking = true;
+      isActive = true;
+      resetActivity(); // 初始激活
+      
+      // 监听鼠标移动和点击（视为活跃观看）
+      document.addEventListener('mousemove', resetActivity);
+      document.addEventListener('click', resetActivity);
+      
+      // 核心计时逻辑：仅在活跃状态下计时
       timer = setInterval(() => {
-        currentSeconds++;
-        document.getElementById('watchTime').textContent = currentSeconds;
-        
-        // 更新记录
-        records[currentVideoUrl].seconds = currentSeconds;
-        // 检查是否合格
-        if (currentSeconds >= REQUIRED && !records[currentVideoUrl].qualified) {
-          records[currentVideoUrl].qualified = true;
-          document.getElementById('qualifiedAlert').style.display = 'block';
-          // 记录合格事件
-          gtag('event', 'qualified', {
-            video: currentVideoName,
-            seconds: currentSeconds,
-            ip: userIp
-          });
-          // 增加IP计数
-          if (isWithinLimit) {
-            const today = new Date().toDateString();
-            const key = `ip_${userIp}_${today}`;
-            localStorage.setItem(key, (parseInt(localStorage.getItem(key) || 0) + 1).toString());
-            updateIpInfo();
+        if (isActive) { // 只有活跃状态才累加时间
+          currentSeconds++;
+          document.getElementById('watchTime').textContent = currentSeconds;
+          records[currentVideoUrl].seconds = currentSeconds;
+          
+          // 检查合格
+          if (currentSeconds >= REQUIRED && !records[currentVideoUrl].qualified) {
+            records[currentVideoUrl].qualified = true;
+            document.getElementById('qualifiedAlert').style.display = 'block';
+            gtag('event', 'qualified', { video: currentVideoName, seconds: currentSeconds });
+            
+            if (isWithinLimit) {
+              const today = new Date().toDateString();
+              localStorage.setItem(`ip_${userIp}_${today}`, 
+                (parseInt(localStorage.getItem(`ip_${userIp}_${today}`) || 0) + 1).toString());
+              updateIpInfo();
+            }
           }
+          updateHistory();
         }
-        
-        updateHistory();
       }, 1000);
     }
 
     // 停止计时
-    function stopTimer() {
-      if (!isTiming) return;
+    function stopTracking() {
+      if (!isTracking) return;
+      
       clearInterval(timer);
-      isTiming = false;
+      clearTimeout(activityTimer);
+      isTracking = false;
+      isActive = false;
+      
+      // 移除事件监听
+      document.removeEventListener('mousemove', resetActivity);
+      document.removeEventListener('click', resetActivity);
     }
 
-    // 更新历史记录
+    // 更新历史
     function updateHistory() {
       let html = '观看记录：';
       let hasRecord = false;
@@ -253,8 +218,12 @@
       document.getElementById('history').innerHTML = html;
     }
 
-    // 页面加载时获取IP
-    window.onload = getIp;
+    // 页面加载时初始化
+    window.onload = () => {
+      getIp();
+      // 页面关闭时停止计时
+      window.addEventListener('beforeunload', stopTracking);
+    };
   </script>
 </body>
 </html>
