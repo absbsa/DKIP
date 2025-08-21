@@ -121,6 +121,7 @@
 
   <script>
     let timer = null;
+    let playCheckInterval = null; // 播放状态检测的定时器
     let currentVideoId = '';
     let currentVideoUrl = '';
     let userIp = '';
@@ -194,12 +195,35 @@
       return videoRecords[videoId].watchSeconds >= REQUIRED_SECONDS;
     }
 
+    // 检测视频是否正在播放（轮询方式）
+    function checkVideoPlaying() {
+      const videoFrame = document.getElementById('videoFrame');
+      try {
+        // 尝试获取iframe内部的视频元素（需视频源允许跨域访问，否则可能报错）
+        const innerDoc = videoFrame.contentDocument || videoFrame.contentWindow.document;
+        const videoElement = innerDoc.querySelector('video');
+        if (videoElement && !videoElement.paused) {
+          if (!isVideoPlaying) {
+            isVideoPlaying = true;
+            startTracking(); // 视频真正播放时才开始计时
+            console.log('视频开始播放，启动计时');
+          }
+        } else {
+          isVideoPlaying = false;
+        }
+      } catch (e) {
+        console.error('检测视频播放状态失败:', e);
+        isVideoPlaying = false;
+      }
+    }
+
     // 加载并播放选中的视频（保留历史记录）
     async function loadSelectedVideo() {
       // 先保存当前视频的记录（如果存在）
       if (currentVideoId) {
         clearInterval(timer); // 停止当前计时
       }
+      clearInterval(playCheckInterval); // 停止之前的播放检测
 
       // 获取新选中的视频信息
       const selector = document.getElementById('videoSelector');
@@ -223,16 +247,19 @@
       // 更新视频播放器
       const videoFrame = document.getElementById('videoFrame');
       videoFrame.src = currentVideoUrl;
-      videoFrame.onplay = function() {
-        isVideoPlaying = true;
-        startTracking(); // 视频真正播放时才开始计时
-        console.log('视频开始播放，启动计时');
-      };
       
+      // 启动播放状态轮询检测
+      playCheckInterval = setInterval(checkVideoPlaying, 500); // 每500ms检测一次
+
       // 获取视频时长
       videoFrame.onloadedmetadata = function() {
         try {
-          videoRecords[currentVideoId].totalSeconds = Math.floor(videoFrame.duration);
+          // 尝试获取iframe内部的视频元素时长
+          const innerDoc = videoFrame.contentDocument || videoFrame.contentWindow.document;
+          const videoElement = innerDoc.querySelector('video');
+          if (videoElement) {
+            videoRecords[currentVideoId].totalSeconds = Math.floor(videoElement.duration);
+          }
         } catch (e) {
           console.log('无法获取视频时长');
         }
@@ -356,6 +383,7 @@
         });
       });
       clearInterval(timer);
+      clearInterval(playCheckInterval);
     });
 
     // 绑定视频选择器的change事件：切换时加载对应视频并保留历史
