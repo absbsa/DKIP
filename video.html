@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>视频任务简化版</title>
+  <title>视频任务</title>
   <style>
     body {
       background: #222;
@@ -12,7 +12,7 @@
       font-family: "微软雅黑", sans-serif;
     }
     .container {
-      max-width: 500px;
+      max-width: 600px;
       margin: 0 auto;
     }
     h2 {
@@ -23,6 +23,17 @@
       margin: 20px 0;
       line-height: 1.6;
       color: #ffd700;
+    }
+    .video-select {
+      margin: 20px 0;
+    }
+    select {
+      padding: 8px 12px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      background: #3a3a3a;
+      color: #fff;
     }
     button {
       padding: 12px 30px;
@@ -59,6 +70,12 @@
 <body>
   <div class="container">
     <h2>选择视频</h2>
+    <div class="video-select">
+      <select id="videoSelector">
+        <option value="https://mivalyo.com/embed/6suaa9gg9y7y" data-name="黄霄雲 1">黄霄雲 1</option>
+        <option value="https://mivalyo.com/embed/649eym1t2485" data-name="黄霄雲 2">黄霄雲 2</option>
+      </select>
+    </div>
     <div class="rule">
       点击视频开始按钮，连续点击直至无广告弹出，不能屏蔽广告，弹出后不管<br>
       如点击开始后无广告，连续点击页面直至看到视频进度条<br>
@@ -67,9 +84,9 @@
     <button onclick="startTask()">开始观看</button>
     <div class="status" id="statusText">等待操作...</div>
     <div class="ip-alert" id="ipAlert"></div>
-    <!-- 真实视频容器 -->
+    <!-- 视频容器 -->
     <video id="videoPlayer" controls>
-      <source src="https://mivalyo.com/embed/6suaa9gg9y7y" type="video/mp4">
+      <source src="" type="video/mp4">
     </video>
   </div>
 
@@ -81,6 +98,7 @@
     let ipCount = 0;        // IP当日使用次数
     const DAILY_LIMIT = 2;  // 每日限制次数
     const video = document.getElementById('videoPlayer');
+    const selector = document.getElementById('videoSelector');
 
     // 获取IP（国内轻量API）
     async function getIp() {
@@ -106,20 +124,27 @@
 
     // 启动任务（开始观看流程）
     async function startTask() {
-      // 1. 检查IP限制
+      // 1. 获取当前选择的视频
+      const videoUrl = selector.value;
+      if (!videoUrl) {
+        alert('请选择视频');
+        return;
+      }
+
+      // 2. 检查IP限制
       ipCount = checkIpUsage();
       if (ipCount >= DAILY_LIMIT) {
         document.getElementById('ipAlert').innerText = `24小时内仅能使用${DAILY_LIMIT}次，已用完`;
         return;
       }
 
-      // 2. 显示状态，加载视频
+      // 3. 加载视频
       document.getElementById('statusText').innerText = '视频加载中...';
-      document.getElementById('ipAlert').innerText = '';
       video.style.display = 'block';
-      video.load(); // 触发加载
+      video.querySelector('source').src = videoUrl;
+      video.load(); // 强制重新加载
 
-      // 3. 视频播放后启动计时
+      // 4. 视频播放后启动计时
       video.addEventListener('play', startTimer);
     }
 
