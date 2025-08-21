@@ -110,65 +110,15 @@
   </div>
 
   <script>
-    // 核心变量（保留原有定义）
-    let actualWatchSeconds = 0; // 累计实际播放时长（秒）
-    let lastPlayTimestamp = 0; // 上一次开始播放的时间戳（毫秒）
-    let isVideoPlaying = false; // 视频是否正在播放
+    // 核心变量（移除视频源事件相关变量，新增本地计时器变量）
+    let localTimer = null; // 本地计时器
+    let localWatchSeconds = 0; // 本地累计时长（秒）
     let useCount = 0;
     let userIp = '';
     let currentUsername = '';
     const iframe = document.getElementById('videoFrame');
     const selector = document.getElementById('videoSelector');
     const backendUrl = 'https://video-backend-nmeq.onrender.com';
-
-    // 1. 修复事件监听逻辑（确保120秒提醒必现）
-    window.addEventListener('message', (event) => {
-      // 宽松验证视频源（解决可能的域名不一致问题）
-      if (!event.origin.includes('mivalyo.com')) return;
-
-      const { type } = event.data; // 简化数据提取，确保兼容性
-      
-      switch (type) {
-        case 'play':
-          lastPlayTimestamp = Date.now();
-          isVideoPlaying = true;
-          document.getElementById('statusText').innerText = '视频正在播放...（已观看：0秒）';
-          break;
-
-        case 'pause':
-          if (isVideoPlaying) {
-            const pauseTimestamp = Date.now();
-            const playedDuration = (pauseTimestamp - lastPlayTimestamp) / 1000;
-            actualWatchSeconds += playedDuration;
-            isVideoPlaying = false;
-            document.getElementById('statusText').innerText = `已暂停，累计播放：${Math.floor(actualWatchSeconds)}秒`;
-          }
-          break;
-
-        case 'timeupdate':
-          if (isVideoPlaying) {
-            const currentPlayed = actualWatchSeconds + (Date.now() - lastPlayTimestamp) / 1000;
-            document.getElementById('statusText').innerText = `正在播放...（已观看：${Math.floor(currentPlayed)}秒）`;
-            
-            // 实际播放满120秒时，强制触发达标提醒
-            if (currentPlayed >= 120) {
-              isVideoPlaying = false;
-              actualWatchSeconds = currentPlayed;
-              const finalSeconds = Math.floor(actualWatchSeconds);
-              
-              // 1. 页面文本提醒（必现）
-              document.getElementById('statusText').innerText = `已达标！实际播放：${finalSeconds}秒`;
-              
-              // 2. 强制弹窗提醒（必现，不依赖上报结果）
-              alert(`已达标！实际播放时长：${finalSeconds}秒`);
-              
-              // 3. 执行上报（即使上报失败，提醒已触发）
-              reportToBackend(finalSeconds);
-            }
-          }
-          break;
-      }
-    });
 
     // 2. 获取用户IP（保持不变）
     async function getIp() {
@@ -199,8 +149,13 @@
       return newCount;
     }
 
-    // 4. 启动任务（保持原有逻辑）
+    // 4. 启动任务（核心修改：使用本地计时器）
     async function startTask() {
+      // 清除可能存在的旧计时器
+      if (localTimer) clearInterval(localTimer);
+      localWatchSeconds = 0;
+
+      // 验证用户名
       const username = prompt('请输入您的用户名（必填）：', '');
       if (!username || !username.trim()) {
         alert('用户名不能为空，请重新输入！');
@@ -209,39 +164,48 @@
       currentUsername = username.trim();
       document.getElementById('usernameDisplay').innerText = `当前用户：${currentUsername}`;
 
+      // 验证视频选择
       const videoUrl = selector.value;
       if (!videoUrl.trim()) {
         alert('请选择有效视频');
         return;
       }
 
+      // 显示使用次数
       useCount = checkUseCount();
       document.getElementById('ipAlert').innerText = `这是24小时内第${useCount + 1}次使用`;
 
-      actualWatchSeconds = 0;
-      lastPlayTimestamp = 0;
-      isVideoPlaying = false;
-
+      // 加载视频
       document.getElementById('statusText').innerText = '视频加载中...';
       iframe.style.display = 'block';
       iframe.src = videoUrl;
 
+      // 视频加载后启动本地计时器
       iframe.onload = function() {
-        setTimeout(() => {
-          iframe.contentWindow.postMessage(
-            { type: 'requestPlaybackEvents' }, 
-            'https://mivalyo.com'
-          );
-          document.getElementById('statusText').innerText = '视频加载完成，请点击播放开始计时';
+        document.getElementById('statusText').innerText = '视频加载完成，开始计时...';
+        
+        // 启动本地计时器（每秒累加1秒，不依赖视频源）
+        localTimer = setInterval(() => {
+          localWatchSeconds++;
+          document.getElementById('statusText').innerText = `正在观看...（已观看：${localWatchSeconds}秒）`;
+          
+          // 满120秒触发达标
+          if (localWatchSeconds >= 120) {
+            clearInterval(localTimer);
+            document.getElementById('statusText').innerText = `已达标！实际观看：120秒`;
+            alert('已达标！观看满120秒');
+            reportToBackend(120); // 上报时长
+          }
         }, 1000);
       };
 
       iframe.onerror = function() {
         document.getElementById('statusText').innerText = '视频加载失败，请重试';
+        if (localTimer) clearInterval(localTimer);
       };
     }
 
-    // 5. 上报真实播放时长（优化错误提示）
+    // 5. 上报真实播放时长（保持优化后的错误提示）
     async function reportToBackend(finalSeconds) {
       const reportData = {
         username: currentUsername,
@@ -270,12 +234,9 @@
       }
     }
 
-    // 6. 页面关闭清理（保持不变）
+    // 6. 页面关闭清理（停止计时器）
     window.addEventListener('beforeunload', () => {
-      if (isVideoPlaying) {
-        const endTimestamp = Date.now();
-        actualWatchSeconds += (endTimestamp - lastPlayTimestamp) / 1000;
-      }
+      if (localTimer) clearInterval(localTimer);
     });
 
     // 7. 初始化（保持不变）
