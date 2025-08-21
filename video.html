@@ -40,7 +40,7 @@
     .ip-reminder { color: #ff9800; margin-top: 10px; font-size: 14px; display: none; }
     .ip-limit-alert { color: #ff4444; margin-top: 10px; font-size: 14px; display: none; }
     .manual-start提示 { color: #ff4444; margin-top: 10px; font-size: 14px; }
-    .session-time { color: #4CAF50; margin-top: 10px; font-size: 14px; }
+    .video-status { color: #4CAF50; margin-top: 10px; font-size: 14px; } /* 改为视频状态提示 */
   </style>
 </head>
 <body>
@@ -59,7 +59,7 @@
       <button onclick="manualStartTracking()" style="background:#ff4444; margin-left:10px;">手动开始计时</button>
       <p class="ip-reminder" id="ipReminder"></p>
       <p class="ip-limit-alert" id="ipLimitAlert"></p>
-      <p class="session-time" id="sessionTime">当前停留时间：0秒</p>
+      <p class="video-status" id="videoStatus">请点击视频区域开始计时</p> <!-- 提示点击视频 -->
       <div class="video-history" id="videoHistory">观看记录：暂无</div>
     </div>
 
@@ -88,11 +88,6 @@
     const IP_USAGE_KEY = 'ipDailyUsageCount';
     const DAILY_LIMIT = 2;
     let videoRecords = {};
-    
-    // 页面停留时间变量
-    let pageStartTime = Date.now();
-    let pageStayTimer = setInterval(updatePageStayTime, 1000);
-    let totalStaySeconds = 0;
 
     // 获取用户IP
     async function getIp() {
@@ -165,6 +160,7 @@
           clearInterval(timer);
           timer = null;
           document.getElementById('manualHint').style.display = 'block';
+          document.getElementById('videoStatus').textContent = '请点击视频区域开始计时';
         }
         return;
       }
@@ -179,6 +175,7 @@
           isVideoPlaying = true;
           startTracking();
           document.getElementById('manualHint').style.display = 'none';
+          document.getElementById('videoStatus').textContent = '视频计时中...';
         }
       } else {
         timeProgressCount = 0;
@@ -187,6 +184,7 @@
           clearInterval(timer);
           timer = null;
           document.getElementById('manualHint').style.display = 'block';
+          document.getElementById('videoStatus').textContent = '视频已暂停，请继续观看';
         }
       }
     }
@@ -198,6 +196,7 @@
       isVideoPlaying = true;
       startTracking();
       document.getElementById('manualHint').style.display = 'none';
+      document.getElementById('videoStatus').textContent = '手动计时中...';
       alert(isWithinLimit ? '已手动开始计时' : '已手动开始计时（不计入有效）');
     }
 
@@ -214,6 +213,7 @@
       document.getElementById('progressDisplay').textContent = "等待视频播放中...";
       document.getElementById('durationAlert').style.display = 'none';
       document.getElementById('manualHint').style.display = 'none';
+      document.getElementById('videoStatus').textContent = '请点击视频区域开始计时';
 
       // 获取视频信息
       const selector = document.getElementById('videoSelector');
@@ -297,6 +297,7 @@
           // 检测合格状态
           if (!videoRecords[currentVideoId].isQualified && checkQualified(currentVideoId)) {
             videoRecords[currentVideoId].isQualified = true;
+            document.getElementById('videoStatus').textContent = '已达到有效观看时长！';
             gtag('event', 'video_qualified', {
               'event_category': 'video',
               'event_label': currentVideoId,
@@ -322,32 +323,12 @@
       }, 1000);
     }
 
-    // 页面停留时间更新
-    function updatePageStayTime() {
-      const now = Date.now();
-      totalStaySeconds = Math.floor((now - pageStartTime) / 1000);
-      document.getElementById('sessionTime').textContent = `当前停留时间：${totalStaySeconds}秒`;
-    }
-
     // 页面关闭处理
     window.addEventListener("beforeunload", () => {
       // 清除定时器
-      clearInterval(pageStayTimer);
       clearInterval(timer);
       clearInterval(playCheckInterval);
       
-      // 计算总停留时间
-      const totalStayTime = Math.floor((Date.now() - pageStartTime) / 1000);
-      
-      // 上报停留时间
-      gtag('event', 'page_session', {
-        'event_category': 'session',
-        'event_label': 'page_stay_time',
-        'value': totalStayTime,
-        'ip': userIp,
-        'video_watched': currentVideoId || 'none'
-      });
-
       // 上报视频结束事件
       Object.keys(videoRecords).forEach(videoId => {
         const record = videoRecords[videoId];
@@ -356,8 +337,7 @@
           'event_label': videoId,
           'value': record.watchSeconds,
           'is_qualified': record.isQualified,
-          'ip': userIp,
-          'page_stay_time': totalStayTime
+          'ip': userIp
         });
       });
     });
@@ -367,6 +347,7 @@
       userInteracted = true;
       this.style.display = 'none';
       lastKnownTime = Date.now();
+      document.getElementById('videoStatus').textContent = '视频加载中...';
     });
 
     // 视频选择变更事件
