@@ -62,6 +62,8 @@
       font-size: 14px;
       color: #ffd700;
       margin-top: 5px;
+      line-height: 1.6; /* 增加行高，提高长文本可读性 */
+      white-space: pre-line; /* 保留换行符 */
     }
     .duration-alert {
       color: #4CAF50;
@@ -110,7 +112,7 @@
         <option value="https://mivalyo.com/embed/649eym1t2485" data-id="video2">黄霄雲 2</option>
         <option value="https://mivalyo.com/embed/third-video-id" data-id="video3">视频 3</option>
       </select>
-      <p class="rule-note">每个视频观看满 120 秒才算合格</p>
+      <p class="rule-note">点击视频开始按钮，连续点击直至无广告弹出，不能屏蔽广告，弹出后不管，看完视频后关闭浏览器，如点击开始后视频直接播放未弹出广告，连续点击播放视频页面直至能看到视频进度条为止，每个视频观看满 120 秒才算合格</p>
       <button onclick="startWatching()">开始观看</button>
       
       <!-- 手动开始计时按钮（备用） -->
