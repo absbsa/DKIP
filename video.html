@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>视频任务最终版（实时监控播放时长）</title>
   <style>
-    /* 样式保持不变，新增账户信息显示样式 */
+    /* 保留原有样式 */
     * {
       margin: 0;
       padding: 0;
@@ -87,6 +87,11 @@
       display: none;
       border: none;
     }
+    .retry-notice {
+      color: #ffdd57;
+      margin: 5px 0;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -96,6 +101,7 @@
       <select id="videoSelector">
         <option value="https://mivalyo.com/embed/6suaa9gg9y7y" data-name="黄霄雲earnvids 1">黄霄雲earnvids 1</option>
         <option value="https://mivalyo.com/embed/649eym1t2485" data-name="黄霄雲earnvids 2">黄霄雲earnvids 2</option>
+        <option value="https://other-domain.com/embed/xxx" data-name="其他视频 1">其他视频 1</option>
       </select>
     </div>
     <div class="rule">
@@ -103,13 +109,13 @@
       如点击开始后无广告，连续点击页面直至看到视频进度条<br>
       每个视频需观看满 <span style="color: #4caf50;">120 秒</span> 才算合格
     </div>
-    <!-- 新增账户信息显示区域 -->
     <div class="account-info" id="accountInfo">
       账户信息加载中...
     </div>
     <div class="username-display" id="usernameDisplay"></div>
     <button onclick="startTask()">开始观看</button>
     <div class="status" id="statusText">等待操作...</div>
+    <div class="retry-notice" id="retryNotice"></div>
     <div class="video-wrapper">
       <div class="video-container">
         <iframe id="videoFrame" allowfullscreen="false" webkitallowfullscreen="false" mozallowfullscreen="false"></iframe>
@@ -118,9 +124,9 @@
   </div>
 
   <script>
-    // 核心变量（移除24小时次数管理相关变量）
-    let localTimer = null; // 本地计时器
-    let localWatchSeconds = 0; // 本地累计时长（秒）
+    // 核心变量
+    let localTimer = null;
+    let localWatchSeconds = 0;
     let userIp = '';
     let currentUsername = '';
     const iframe = document.getElementById('videoFrame');
@@ -130,7 +136,41 @@
     const EARNVIDS_API_KEY = "42634dsn9d5valpvutn5g";
     const EARNVIDS_BASE_URL = "https://earnvidsapi.com/api";
 
-    // 1. 获取用户IP（保持不变）
+
+    // 1. 本地存储记录管理（静默去重和限制）
+    const STORAGE_KEY = 'videoTaskRecords';
+
+    // 获取本地所有记录
+    function getLocalRecords() {
+      const data = localStorage.getItem(STORAGE_KEY) || '{"records":[]}';
+      return JSON.parse(data).records;
+    }
+
+    // 保存记录到本地存储
+    function saveRecord(record) {
+      const records = getLocalRecords();
+      records.push({
+        ...record,
+        timestamp: Date.now()
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ records }));
+    }
+
+    // 检查是否为重复记录（同一IP+视频链接，24小时内）
+    function checkIpVideoLimit(ip, videoUrl) {
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000; // 24小时毫秒数
+      // 过滤同一IP+视频链接且在24小时内的记录
+      const duplicateRecords = getLocalRecords().filter(record => 
+        record.ip === ip && 
+        record.videoUrl === videoUrl && 
+        now - record.timestamp <= dayMs
+      );
+      return duplicateRecords.length > 0; // 存在则返回true（限制）
+    }
+
+
+    // 2. 获取用户IP
     async function getIp() {
       try {
         const res = await fetch('https://api.ipify.org?format=json');
@@ -140,7 +180,8 @@
       }
     }
 
-    // 2. 获取earnvids账户信息（余额）
+
+    // 3. 获取earnvids账户信息
     async function getEarnvidsAccountInfo() {
       try {
         const response = await fetch(
@@ -163,7 +204,8 @@
       }
     }
 
-    // 3. 获取earnvids总播放次数
+
+    // 4. 获取earnvids总播放次数
     async function getTotalPlays() {
       try {
         const response = await fetch(
@@ -172,7 +214,6 @@
         );
         const data = await response.json();
         if (data.status === 200 && data.result.length > 0) {
-          // 计算所有日期的播放量总和
           return data.result.reduce((total, day) => {
             return total + parseInt(day.views || 0);
           }, 0);
@@ -186,12 +227,12 @@
       }
     }
 
-    // 4. 加载并显示账户信息
+
+    // 5. 加载并显示账户信息
     async function loadAccountInfo() {
       const accountInfoEl = document.getElementById('accountInfo');
       accountInfoEl.textContent = '加载账户信息中...';
       
-      // 并行请求账户信息和播放统计
       const [accountInfo, totalPlays] = await Promise.all([
         getEarnvidsAccountInfo(),
         getTotalPlays()
@@ -207,13 +248,13 @@
       }
     }
 
-    // 5. 启动任务（移除24小时次数相关逻辑）
+
+    // 6. 启动任务
     async function startTask() {
-      // 清除可能存在的旧计时器
       if (localTimer) clearInterval(localTimer);
       localWatchSeconds = 0;
+      document.getElementById('retryNotice').textContent = '';
 
-      // 验证用户名
       const username = prompt('请输入您的用户名（必填）：', '');
       if (!username || !username.trim()) {
         alert('用户名不能为空，请重新输入！');
@@ -222,33 +263,27 @@
       currentUsername = username.trim();
       document.getElementById('usernameDisplay').innerText = `当前用户：${currentUsername}`;
 
-      // 验证视频选择
       const videoUrl = selector.value;
       if (!videoUrl.trim()) {
         alert('请选择有效视频');
         return;
       }
 
-      // 加载视频
       document.getElementById('statusText').innerText = '视频加载中...';
       iframe.style.display = 'block';
       iframe.src = videoUrl;
 
-      // 视频加载后启动本地计时器
       iframe.onload = function() {
         document.getElementById('statusText').innerText = '视频加载完成，开始计时...';
         
-        // 启动本地计时器（每秒累加1秒，不依赖视频源）
         localTimer = setInterval(() => {
           localWatchSeconds++;
           document.getElementById('statusText').innerText = `正在观看...（已观看：${localWatchSeconds}秒）`;
           
-          // 满120秒触发达标
           if (localWatchSeconds >= 120) {
             clearInterval(localTimer);
             document.getElementById('statusText').innerText = `已达标！实际观看：120秒`;
-            alert('已达标！观看满120秒');
-            reportToBackend(120); // 上报时长
+            handleQualification(videoUrl); // 达标后处理
           }
         }, 1000);
       };
@@ -259,44 +294,83 @@
       };
     }
 
-    // 6. 上报数据（保持不变）
-    async function reportToBackend(finalSeconds) {
+
+    // 7. 达标后处理（静默检查限制，不提示）
+    async function handleQualification(videoUrl) {
+      // 检查同一IP+视频链接24小时内是否已记录
+      const isLimited = checkIpVideoLimit(userIp, videoUrl);
+      if (isLimited) {
+        // 重复记录，静默不处理（不提示，不上报）
+        return;
+      }
+
+      // 无限制，尝试上报
+      reportToBackend(120, videoUrl);
+    }
+
+
+    // 8. 上报数据（带重试机制）
+    async function reportToBackend(finalSeconds, videoUrl, retryCount = 3) {
       const reportData = {
         username: currentUsername,
         ip: userIp,
-        videoUrl: selector.value,
+        videoUrl: videoUrl,
         actualWatchSeconds: finalSeconds
       };
+
+      const retryNotice = document.getElementById('retryNotice');
+      if (retryCount < 3) {
+        retryNotice.textContent = `上报失败，正在重试（剩余${retryCount}次）...`;
+      }
 
       try {
         const response = await fetch(`${backendUrl}/api/report`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(reportData)
+          body: JSON.stringify(reportData),
+          timeout: 10000
         });
+
+        if (!response.ok) {
+          throw new Error(`服务器响应错误: ${response.status}`);
+        }
 
         const result = await response.json();
         if (result.success) {
+          // 上报成功后保存记录（用于后续限制检查）
+          saveRecord({
+            ip: userIp,
+            videoUrl: videoUrl
+          });
+          retryNotice.textContent = '数据上报成功！';
           console.log('上报成功:', result);
         } else {
-          alert(`数据已达标，但上报失败: ${result.message}`);
+          retryNotice.textContent = `上报失败: ${result.message}`;
           console.error('上报失败:', result);
         }
       } catch (error) {
-        alert(`数据已达标，但网络错误导致上报失败: ${error.message}`);
-        console.error('上报异常:', error);
+        if (retryCount > 0) {
+          console.log(`上报失败（剩余${retryCount - 1}次）:`, error.message);
+          setTimeout(() => {
+            reportToBackend(finalSeconds, videoUrl, retryCount - 1);
+          }, 3000);
+        } else {
+          retryNotice.textContent = '多次上报失败，请检查网络后刷新页面重试';
+          console.error('最终上报失败:', error);
+        }
       }
     }
 
-    // 7. 页面关闭清理（停止计时器）
+
+    // 9. 页面关闭清理
     window.addEventListener('beforeunload', () => {
       if (localTimer) clearInterval(localTimer);
     });
 
-    // 8. 初始化（加载IP和账户信息）
+
+    // 10. 初始化
     (async () => {
       userIp = await getIp();
-      // 加载earnvids账户信息（总播放次数和余额）
       await loadAccountInfo();
     })();
   </script>
