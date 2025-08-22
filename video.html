@@ -37,6 +37,7 @@
       margin: 20px 0;
     }
 
+    /* 调整 select 样式，使其更长更宽 */
     select {
       padding: 10px 15px;
       font-size: 16px;
@@ -45,6 +46,8 @@
       background: #3a3a3a;
       color: #fff;
       cursor: pointer;
+      width: 300px; /* 调整宽度 */
+      height: 40px; /* 调整高度 */
     }
 
     .rule {
@@ -127,18 +130,6 @@
     .account-section {
       margin: 5px 0;
     }
-
-    /* 新增 a 标签样式 */
-    .video-link {
-      display: inline-block;
-      color: #1da1f2;
-      text-decoration: none;
-      margin: 5px 0;
-    }
-
-    .video-link:hover {
-      text-decoration: underline;
-    }
   </style>
 </head>
 
@@ -153,12 +144,6 @@
         <option value="https://bigwings.io/d/1oo8t2gz2tk9" data-name="黄霄雲bigwings 2">黄霄雲bigwings 2</option>
         <option value="https://bigwings.io/d/7wndmp8dmwkt" data-name="黄霄雲bigwings 3">黄霄雲bigwings 3</option>
       </select>
-      <!-- 显示 a 标签跳转区域 -->
-      <div id="bigwingsVideoLinks" style="margin-top: 10px;">
-        <a href="https://bigwings.io/d/wgyv6xx6lu7p" target="_blank" class="video-link">黄霄雲bigwings 1</a><br>
-        <a href="https://bigwings.io/d/1oo8t2gz2tk9" target="_blank" class="video-link">黄霄雲bigwings 2</a><br>
-        <a href="https://bigwings.io/d/7wndmp8dmwkt" target="_blank" class="video-link">黄霄雲bigwings 3</a><br>
-      </div>
     </div>
     <div class="rule">
       点击视频开始按钮，连续点击直至无广告弹出，不能屏蔽广告，弹出后不管<br>
@@ -369,7 +354,7 @@
         // 启动计时器，同时监控窗口是否关闭
         localTimer = setInterval(() => {
           localWatchSeconds++;
-          
+
           // 检查窗口是否已关闭
           if (videoWindow.closed) {
             clearInterval(localTimer);
@@ -395,13 +380,12 @@
             }
           } else {
             // 实时更新观看时长
-            document.getElementById('statusText').textContent = 
+            document.getElementById('statusText').textContent =
               `正在观看...（已观看：${localWatchSeconds}秒 / 需120秒）`;
           }
         }, 1000);
-      } 
-      // 处理其他视频（iframe嵌入）
-      else {
+      } else {
+        // 处理其他视频（iframe嵌入）
         iframe.style.display = 'block';
         iframe.src = videoUrl;
 
@@ -471,30 +455,3 @@
       } catch (error) {
         if (retryCount > 0) {
           setTimeout(() => {
-            reportToBackend(finalSeconds, videoUrl, retryCount - 1);
-          }, 3000);
-        } else {
-          retryNotice.textContent = '多次上报失败，请检查网络后刷新页面重试';
-          console.error('最终上报失败:', error);
-        }
-      }
-    }
-
-
-    // 9. 页面关闭时清理资源
-    window.addEventListener('beforeunload', () => {
-      if (localTimer) clearInterval(localTimer);
-      if (videoWindow && !videoWindow.closed) {
-        videoWindow.close();
-      }
-    });
-
-
-    // 10. 初始化
-    (async () => {
-      userIp = await getIp();
-      await loadAccountInfo();
-    })();
-  </script>
-</body>
-</html>
