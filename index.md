@@ -1,9 +1,4 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta name="monetag" content="180fac139bde9e7c9c9ab0ec4d0e5f3a">
-  </head>
-  <body>
+<meta name="monetag" content="180fac139bde9e7c9c9ab0ec4d0e5f3a">
     
 # 视频观看页面
 # 点击此处页面查看视频：[观看满120秒即可参与抽奖](video.html) 
@@ -146,7 +141,4 @@ TG：@kukuAPT
 [Android](https://github.com/MetaCubeX/ClashMetaForAndroid/releases)        [iOS](https://apps.apple.com/us/app/sing-box-vt/id6673731168)         [Windows](https://github.com/clash-verge-rev/clash-verge-rev/releases)          [macOS](https://apps.apple.com/us/app/sing-box-vt/id6673731168) 
 
 
-
-  </body>
-</html>
 
