@@ -3,8 +3,9 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>视频任务</title>
+  <title>视频任务最终版（实时监控播放时长）</title>
   <style>
+    /* 保持原有样式 */
     * {
       margin: 0;
       padding: 0;
@@ -20,7 +21,7 @@
     }
 
     .container {
-      max-width: 600px;
+      max-width: 1000px;
       margin: 0 auto;
       padding: 20px;
       background: #2c2c2c;
@@ -36,15 +37,17 @@
       margin: 20px 0;
     }
 
+    /* 调整 select 样式，使其更长更宽 */
     select {
-      padding: 8px 12px;
+      padding: 10px 15px;
       font-size: 16px;
       border-radius: 6px;
       border: none;
       background: #3a3a3a;
       color: #fff;
       cursor: pointer;
-      width: 280px;
+      width: 300px; /* 调整宽度 */
+      height: 40px; /* 调整高度 */
     }
 
     .rule {
@@ -55,7 +58,7 @@
     }
 
     button {
-      padding: 10px 30px;
+      padding: 12px 35px;
       font-size: 16px;
       border-radius: 25px;
       border: none;
@@ -93,12 +96,11 @@
     .video-wrapper {
       position: relative;
       width: 100%;
-      max-width: 500px;
+      max-width: 800px;
       margin: 30px auto;
       border: 2px solid #444;
       border-radius: 8px;
       overflow: hidden;
-      display: none; /* 初始隐藏，按需显示 */
     }
 
     .video-container {
@@ -106,6 +108,7 @@
       width: 100%;
       height: 0;
       padding-bottom: 56.25%;
+      max-height: 500px;
     }
 
     iframe {
@@ -114,6 +117,7 @@
       left: 0;
       width: 100%;
       height: 100%;
+      display: none;
       border: none;
     }
 
@@ -121,6 +125,10 @@
       color: #ffdd57;
       margin: 5px 0;
       font-size: 14px;
+    }
+
+    .account-section {
+      margin: 5px 0;
     }
   </style>
 </head>
@@ -130,25 +138,28 @@
     <h2>选择视频</h2>
     <div class="dropdown">
       <select id="videoSelector">
-        <option value="https://mivalyo.com/embed/6suaa9gg9y7y">黄霄雲earnvids 1</option>
-        <option value="https://mivalyo.com/embed/649eym1t2485">黄霄雲earnvids 2</option>
-        <option value="https://bigwings.io/d/wgyv6xx6lu7p">黄霄雲bigwings 1</option>
-        <option value="https://bigwings.io/d/1oo8t2gz2tk9">黄霄雲bigwings 2</option>
-        <option value="https://bigwings.io/d/7wndmp8dmwkt">黄霄雲bigwings 3</option>
+        <option value="https://mivalyo.com/embed/6suaa9gg9y7y" data-name="黄霄雲earnvids 1">黄霄雲earnvids 1</option>
+        <option value="https://mivalyo.com/embed/649eym1t2485" data-name="黄霄雲earnvids 2">黄霄雲earnvids 2</option>
+        <option value="https://bigwings.io/d/wgyv6xx6lu7p" data-name="黄霄雲bigwings 1">黄霄雲bigwings 1</option>
+        <option value="https://bigwings.io/d/1oo8t2gz2tk9" data-name="黄霄雲bigwings 2">黄霄雲bigwings 2</option>
+        <option value="https://bigwings.io/d/7wndmp8dmwkt" data-name="黄霄雲bigwings 3">黄霄雲bigwings 3</option>
       </select>
     </div>
     <div class="rule">
-      点击开始观看后，按规则操作视频<br>
+      点击视频开始按钮，连续点击直至无广告弹出，不能屏蔽广告，弹出后不管<br>
+      如点击开始后无广告，连续点击页面直至看到视频进度条<br>
       每个视频需观看满 <span style="color: #4caf50;">120 秒</span> 才算合格
     </div>
-    <div class="account-info" id="accountInfo">账户信息加载中...</div>
+    <div class="account-info" id="accountInfo">
+      账户信息加载中...
+    </div>
     <div class="username-display" id="usernameDisplay"></div>
     <button onclick="startTask()">开始观看</button>
     <div class="status" id="statusText"></div>
     <div class="retry-notice" id="retryNotice"></div>
-    <div class="video-wrapper" id="videoWrapper">
+    <div class="video-wrapper">
       <div class="video-container">
-        <iframe id="videoFrame"></iframe>
+        <iframe id="videoFrame" allowfullscreen="false" webkitallowfullscreen="false" mozallowfullscreen="false"></iframe>
       </div>
     </div>
   </div>
@@ -156,148 +167,374 @@
   <script>
     // 核心变量
     let localTimer = null;
-    let watchSeconds = 0;
+    let localWatchSeconds = 0;
     let userIp = '';
-    let username = '';
-    let videoWindow = null;
-    const videoSelector = document.getElementById('videoSelector');
-    const videoFrame = document.getElementById('videoFrame');
-    const videoWrapper = document.getElementById('videoWrapper');
-    const statusText = document.getElementById('statusText');
-    const retryNotice = document.getElementById('retryNotice');
-    const accountInfo = document.getElementById('accountInfo');
-    const usernameDisplay = document.getElementById('usernameDisplay');
+    let currentUsername = '';
+    let videoWindow = null; // 用于监控bigwings视频窗口
+    const iframe = document.getElementById('videoFrame');
+    const selector = document.getElementById('videoSelector');
     const backendUrl = 'https://video-backend-nmeq.onrender.com';
+    // earnvids API配置
+    const EARNVIDS_API_KEY = "42634dsn9d5valpvutn5g";
+    const EARNVIDS_BASE_URL = "https://earnvidsapi.com/api";
 
-    // 模拟账户信息加载（可替换为真实接口）
-    setTimeout(() => {
-      accountInfo.textContent = '账户信息加载完成（模拟）';
-    }, 1500);
 
-    // 获取用户IP（简单模拟，实际用接口）
-    (async () => {
+    // 1. 本地存储记录管理（保持不变）
+    const STORAGE_KEY = 'videoTaskRecords';
+
+    function getLocalRecords() {
+      const data = localStorage.getItem(STORAGE_KEY) || '{"records":[]}';
+      return JSON.parse(data).records;
+    }
+
+    function saveRecord(record) {
+      const records = getLocalRecords();
+      records.push({
+        ...record,
+        timestamp: Date.now()
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ records }));
+    }
+
+    function checkIpVideoLimit(ip, videoUrl) {
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
+      const duplicateRecords = getLocalRecords().filter(record =>
+        record.ip === ip &&
+        record.videoUrl === videoUrl &&
+        now - record.timestamp <= dayMs
+      );
+      return duplicateRecords.length > 0;
+    }
+
+
+    // 2. 工具函数：带超时的fetch请求（保持不变）
+    async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
       try {
-        const res = await fetch('https://api.ipify.org?format=json');
-        const data = await res.json();
-        userIp = data.ip;
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+      }
+    }
+
+
+    // 3. 获取用户IP（保持不变）
+    async function getIp() {
+      try {
+        const res = await fetchWithTimeout('https://api.ipify.org?format=json', {}, 10000);
+        return (await res.json()).ip;
       } catch (err) {
-        userIp = 'unknown-ip';
+        return 'unknown-ip';
       }
-    })();
+    }
 
-    // 启动任务
-    function startTask() {
-      // 重置状态
-      clearInterval(localTimer);
-      watchSeconds = 0;
-      statusText.textContent = '';
-      retryNotice.textContent = '';
-      if (videoWindow && !videoWindow.closed) videoWindow.close();
 
-      // 获取用户名（若需要长期保存，可结合 localStorage ）
-      const inputUsername = prompt('请输入用户名（必填）：');
-      if (!inputUsername) {
-        alert('用户名不能为空！');
+    // 4. earnvids相关接口（保持不变）
+    async function getEarnvidsAccountInfo() {
+      try {
+        const response = await fetchWithTimeout(
+          `${EARNVIDS_BASE_URL}/account/info?key=${EARNVIDS_API_KEY}`,
+          {
+            headers: { "Accept": "*/*" },
+            mode: "cors"
+          },
+          10000
+        );
+        const data = await response.json();
+        if (data.status === 200) {
+          return {
+            balance: data.result.balance || '0.00',
+            filesTotal: data.result.files_total || 0
+          };
+        } else {
+          console.error('earnvids账户信息失败:', data.msg);
+          return null;
+        }
+      } catch (error) {
+        console.error('earnvids账户请求异常:', error);
+        return null;
+      }
+    }
+
+    async function getEarnvidsTotalPlays() {
+      try {
+        const response = await fetchWithTimeout(
+          `${EARNVIDS_BASE_URL}/account/stats?key=${EARNVIDS_API_KEY}`,
+          {
+            headers: { "Accept": "*/*" },
+            mode: "cors"
+          },
+          10000
+        );
+        const data = await response.json();
+        if (data.status === 200 && data.result.length > 0) {
+          return data.result.reduce((total, day) => {
+            return total + parseInt(day.views || 0);
+          }, 0);
+        } else {
+          console.error('earnvids播放统计失败:', data.msg);
+          return 0;
+        }
+      } catch (error) {
+        console.error('earnvids播放请求异常:', error);
+        return 0;
+      }
+    }
+
+
+    // 5. 加载并显示所有账户信息（保持不变）
+    async function loadAccountInfo() {
+      const accountInfoEl = document.getElementById('accountInfo');
+      accountInfoEl.textContent = '账户信息加载中...';
+
+      // 防止接口请求过久导致页面卡顿，增加超时控制
+      try {
+        const [earnvidsAccount, earnvidsPlays] = await Promise.all([
+          getEarnvidsAccountInfo(),
+          getEarnvidsTotalPlays()
+        ]);
+
+        let content = '';
+        if (earnvidsAccount && earnvidsPlays !== null) {
+          content += `<div class="account-section">
+            earnvids账户总播放次数: <strong>${earnvidsPlays}</strong> 次 | 
+            账户余额: <strong>${earnvidsAccount.balance}</strong> 美元
+          </div>`;
+        } else {
+          content += '<div class="account-section">earnvids账户信息加载失败</div>';
+        }
+        accountInfoEl.innerHTML = content;
+      } catch (error) {
+        accountInfoEl.textContent = '账户信息加载超时';
+        console.error('账户信息加载错误:', error);
+      }
+    }
+
+
+    // 6. 启动任务（修复卡顿问题）
+    async function startTask() {
+      // 清除之前的计时器和窗口引用，防止内存泄漏
+      if (localTimer) {
+        clearInterval(localTimer);
+        localTimer = null;
+      }
+      if (videoWindow && !videoWindow.closed) {
+        try {
+          videoWindow.close();
+        } catch (e) {
+          console.log('关闭窗口失败:', e);
+        }
+        videoWindow = null;
+      }
+      localWatchSeconds = 0;
+      document.getElementById('statusText').textContent = '';
+      document.getElementById('retryNotice').textContent = '';
+
+      // 验证用户名
+      const username = prompt('请输入您的用户名（必填）：', '');
+      if (!username || !username.trim()) {
+        alert('用户名不能为空，请重新输入！');
         return;
       }
-      username = inputUsername.trim();
-      usernameDisplay.textContent = `当前用户：${username}`;
+      currentUsername = username.trim();
+      document.getElementById('usernameDisplay').innerText = `当前用户：${currentUsername}`;
 
-      // 获取视频地址
-      const videoUrl = videoSelector.value;
-      if (!videoUrl) {
-        alert('请选择视频！');
+      // 获取选中的视频链接
+      const videoUrl = selector.value;
+      if (!videoUrl.trim()) {
+        alert('请选择有效视频');
         return;
       }
 
-      // 区分视频类型，处理播放
+      // 处理bigwings视频（新窗口打开+监控关闭状态）
       if (videoUrl.includes('bigwings.io')) {
-        // bigwings 视频：新窗口打开
-        videoWindow = window.open(videoUrl, '_blank');
-        if (!videoWindow) {
-          alert('浏览器阻止了弹窗，请允许弹出后重试！');
+        // 打开新窗口并保存引用
+        try {
+          videoWindow = window.open(videoUrl, '_blank');
+        } catch (e) {
+          alert('无法打开新窗口，请检查浏览器设置');
+          console.error('打开窗口失败:', e);
           return;
         }
-        videoWrapper.style.display = 'none';
-        statusText.textContent = '视频已在新窗口打开，请保持播放满120秒';
+        
+        if (!videoWindow) {
+          alert('浏览器阻止了弹窗，请允许弹窗后重试！');
+          return;
+        }
 
-        // 计时 + 监控窗口关闭
+        document.getElementById('statusText').textContent = '视频已在新窗口打开，请保持播放满120秒...';
+
+        // 启动计时器，同时监控窗口是否关闭
         localTimer = setInterval(() => {
-          watchSeconds++;
-          // 窗口关闭时判断时长
+          // 防止计时器累积导致的卡顿
+          if (!localTimer) return;
+          
+          localWatchSeconds++;
+          
+          // 检查窗口是否已关闭
           if (videoWindow.closed) {
             clearInterval(localTimer);
-            if (watchSeconds >= 120) {
-              statusText.textContent = `观看完成！实际时长：${watchSeconds}秒（达标）`;
-              reportData(videoUrl, watchSeconds);
+            localTimer = null;
+            const actualDuration = localWatchSeconds;
+            // 根据实际观看时长判断是否达标
+            if (actualDuration >= 120) {
+              document.getElementById('statusText').textContent = `视频窗口已关闭，实际观看${actualDuration}秒（已达标）`;
+              handleQualification(videoUrl, actualDuration);
             } else {
-              statusText.textContent = `观看完成！实际时长：${watchSeconds}秒（未达标，需120秒）`;
+              document.getElementById('statusText').textContent = `视频窗口已关闭，实际观看${actualDuration}秒（未达120秒，未达标）`;
             }
             return;
           }
-          // 满120秒提示
-          if (watchSeconds >= 120) {
+
+          // 未关闭但已达120秒，自动标记达标
+          if (localWatchSeconds >= 120) {
             clearInterval(localTimer);
-            statusText.textContent = '已观看满120秒，任务达标！可关闭窗口完成上报';
-            reportData(videoUrl, watchSeconds);
-            if (!videoWindow.closed) videoWindow.close();
+            localTimer = null;
+            document.getElementById('statusText').textContent = '已观看满120秒，任务达标！';
+            handleQualification(videoUrl, 120);
+            // 自动关闭视频窗口
+            if (!videoWindow.closed) {
+              try {
+                videoWindow.close();
+              } catch (e) {
+                console.log('自动关闭窗口失败:', e);
+              }
+              videoWindow = null;
+            }
           } else {
-            statusText.textContent = `正在观看... 已观看 ${watchSeconds} 秒（需120秒）`;
+            // 实时更新观看时长
+            document.getElementById('statusText').textContent =
+              `正在观看...（已观看：${localWatchSeconds}秒 / 需120秒）`;
           }
         }, 1000);
-      } else {
-        // 其他视频：iframe 播放
-        videoWrapper.style.display = 'block';
-        videoFrame.src = videoUrl;
-        statusText.textContent = '视频加载中... 加载完成后开始计时';
+      } 
+      // 处理其他视频（iframe嵌入）
+      else {
+        iframe.style.display = 'block';
+        iframe.src = videoUrl;
 
-        // iframe 加载完成后计时
-        videoFrame.onload = () => {
-          statusText.textContent = '视频加载完成，开始计时';
+        // 防止重复绑定事件导致的问题
+        iframe.onload = null;
+        iframe.onerror = null;
+
+        iframe.onload = function () {
+          // 确保计时器已清除
+          if (localTimer) {
+            clearInterval(localTimer);
+          }
           localTimer = setInterval(() => {
-            watchSeconds++;
-            if (watchSeconds >= 120) {
+            if (!localTimer) return;
+            
+            localWatchSeconds++;
+            if (localWatchSeconds >= 120) {
               clearInterval(localTimer);
-              statusText.textContent = '已观看满120秒，任务达标！';
-              reportData(videoUrl, watchSeconds);
-            } else {
-              statusText.textContent = `正在观看... 已观看 ${watchSeconds} 秒（需120秒）`;
+              localTimer = null;
+              handleQualification(videoUrl, 120);
             }
           }, 1000);
         };
 
-        videoFrame.onerror = () => {
-          clearInterval(localTimer);
-          statusText.textContent = '视频加载失败，请重试';
+        iframe.onerror = function () {
+          if (localTimer) {
+            clearInterval(localTimer);
+            localTimer = null;
+          }
+          document.getElementById('statusText').textContent = '视频加载失败，请重试';
         };
       }
     }
 
-    // 上报数据（模拟，根据实际后端调整）
-    async function reportData(videoUrl, duration) {
+
+    // 7. 达标后处理（新增实际时长参数）
+    async function handleQualification(videoUrl, actualDuration) {
+      const isLimited = checkIpVideoLimit(userIp, videoUrl);
+      if (isLimited) {
+        document.getElementById('retryNotice').textContent = '24小时内已观看过该视频，无法重复上报';
+        return;
+      }
+      reportToBackend(actualDuration, videoUrl);
+    }
+
+
+    // 8. 上报数据（修复未完成的代码）
+    async function reportToBackend(finalSeconds, videoUrl, retryCount = 3) {
       const reportData = {
-        username,
-        userIp,
-        videoUrl,
-        duration,
+        username: currentUsername,
+        ip: userIp,
+        videoUrl: videoUrl,
+        actualWatchSeconds: finalSeconds // 上报实际观看时长
       };
+
+      const retryNotice = document.getElementById('retryNotice');
+      if (retryCount < 3) {
+        retryNotice.textContent = `上报失败，正在重试（剩余${retryCount}次）...`;
+      }
+
       try {
-        const res = await fetch(backendUrl + '/api/report', {
+        const response = await fetchWithTimeout(`${backendUrl}/api/report`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(reportData),
-        });
-        const result = await res.json();
+          body: JSON.stringify(reportData)
+        }, 10000);
+
+        if (!response.ok) {
+          throw new Error(`服务器响应错误: ${response.status}`);
+        }
+
+        const result = await response.json();
         if (result.success) {
+          saveRecord({ ip: userIp, videoUrl: videoUrl });
           retryNotice.textContent = '数据上报成功！';
+          console.log('上报成功:', result);
         } else {
-          retryNotice.textContent = `上报失败：${result.message}`;
+          retryNotice.textContent = `上报失败: ${result.message}`;
+          console.error('上报失败:', result);
         }
       } catch (error) {
-        retryNotice.textContent = '上报失败，请检查网络后重试';
+        if (retryCount > 0) {
+          setTimeout(() => {
+            reportToBackend(finalSeconds, videoUrl, retryCount - 1);
+          }, 3000);
+        } else {
+          retryNotice.textContent = '多次上报失败，请检查网络后刷新页面重试';
+          console.error('最终上报失败:', error);
+        }
       }
     }
+
+
+    // 9. 页面关闭时清理资源
+    window.addEventListener('beforeunload', () => {
+      if (localTimer) {
+        clearInterval(localTimer);
+      }
+      if (videoWindow && !videoWindow.closed) {
+        try {
+          videoWindow.close();
+        } catch (e) {
+          console.log('页面关闭时清理窗口失败:', e);
+        }
+      }
+    });
+
+
+    // 10. 初始化（增加错误处理防止页面卡住）
+    (async () => {
+      try {
+        userIp = await getIp();
+        await loadAccountInfo();
+      } catch (error) {
+        console.error('初始化错误:', error);
+        // 即使初始化出错也保证页面可操作
+        userIp = 'unknown-ip';
+        document.getElementById('accountInfo').textContent = '初始化时发生错误，但不影响基本功能使用';
+      }
+    })();
   </script>
 </body>
-
 </html>
