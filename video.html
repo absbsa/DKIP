@@ -167,7 +167,7 @@
   <script>
     // 核心变量
     let localTimer = null;
-    let localWatchSeconds = 0;
+    let localWatchSeconds = 0; // 仅用于mivalyo视频计时
     let userIp = '';
     let currentUsername = '';
     let videoWindow = null; // 用于监控bigwings视频窗口
@@ -316,7 +316,7 @@
     }
 
 
-    // 6. 启动任务（修复卡顿问题）
+    // 6. 启动任务（仅修改bigwings视频计时逻辑）
     async function startTask() {
       // 清除之前的计时器和窗口引用，防止内存泄漏
       if (localTimer) {
@@ -331,7 +331,7 @@
         }
         videoWindow = null;
       }
-      localWatchSeconds = 0;
+      localWatchSeconds = 0; // 重置mivalyo视频计时
       document.getElementById('statusText').textContent = '';
       document.getElementById('retryNotice').textContent = '';
 
@@ -351,8 +351,11 @@
         return;
       }
 
-      // 处理bigwings视频（新窗口打开+监控关闭状态）
+      // 处理bigwings视频（使用本地电脑时间差计时）
       if (videoUrl.includes('bigwings.io')) {
+        // 记录本地开始时间（时间戳，毫秒）
+        const startTime = Date.now();
+        
         // 打开新窗口并保存引用
         try {
           videoWindow = window.open(videoUrl, '_blank');
@@ -369,19 +372,20 @@
 
         document.getElementById('statusText').textContent = '视频已在新窗口打开，请保持播放满120秒...';
 
-        // 启动计时器，同时监控窗口是否关闭
+        // 启动计时器，基于本地时间差计算时长
         localTimer = setInterval(() => {
-          // 防止计时器累积导致的卡顿
-          if (!localTimer) return;
+          if (!localTimer) return; // 防止计时器已清除后继续执行
           
-          localWatchSeconds++;
+          // 计算当前已观看时长（秒）
+          const currentDuration = Math.floor((Date.now() - startTime) / 1000);
           
           // 检查窗口是否已关闭
           if (videoWindow.closed) {
             clearInterval(localTimer);
             localTimer = null;
-            const actualDuration = localWatchSeconds;
-            // 根据实际观看时长判断是否达标
+            const actualDuration = Math.floor((Date.now() - startTime) / 1000);
+            
+            // 根据实际时长判断达标状态
             if (actualDuration >= 120) {
               document.getElementById('statusText').textContent = `视频窗口已关闭，实际观看${actualDuration}秒（已达标）`;
               handleQualification(videoUrl, actualDuration);
@@ -392,7 +396,7 @@
           }
 
           // 未关闭但已达120秒，自动标记达标
-          if (localWatchSeconds >= 120) {
+          if (currentDuration >= 120) {
             clearInterval(localTimer);
             localTimer = null;
             document.getElementById('statusText').textContent = '已观看满120秒，任务达标！';
@@ -407,13 +411,13 @@
               videoWindow = null;
             }
           } else {
-            // 实时更新观看时长
+            // 实时更新基于本地时间的观看时长
             document.getElementById('statusText').textContent =
-              `正在观看...（已观看：${localWatchSeconds}秒 / 需120秒）`;
+              `正在观看...（已观看：${currentDuration}秒 / 需120秒）`;
           }
         }, 1000);
       } 
-      // 处理其他视频（iframe嵌入）
+      // 处理mivalyo视频（保持原有计时逻辑不变）
       else {
         iframe.style.display = 'block';
         iframe.src = videoUrl;
@@ -450,7 +454,7 @@
     }
 
 
-    // 7. 达标后处理（新增实际时长参数）
+    // 7. 达标后处理（保持不变）
     async function handleQualification(videoUrl, actualDuration) {
       const isLimited = checkIpVideoLimit(userIp, videoUrl);
       if (isLimited) {
@@ -461,7 +465,7 @@
     }
 
 
-    // 8. 上报数据（修复未完成的代码）
+    // 8. 上报数据（保持不变）
     async function reportToBackend(finalSeconds, videoUrl, retryCount = 3) {
       const reportData = {
         username: currentUsername,
@@ -508,7 +512,7 @@
     }
 
 
-    // 9. 页面关闭时清理资源
+    // 9. 页面关闭时清理资源（保持不变）
     window.addEventListener('beforeunload', () => {
       if (localTimer) {
         clearInterval(localTimer);
@@ -523,7 +527,7 @@
     });
 
 
-    // 10. 初始化（增加错误处理防止页面卡住）
+    // 10. 初始化（保持不变）
     (async () => {
       try {
         userIp = await getIp();
