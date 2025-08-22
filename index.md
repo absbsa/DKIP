@@ -8,7 +8,7 @@
 
 
 
-# **批量多开Google浏览器并相互独立代理配置教程** 
+# **批量多开Google浏览器1000窗口代码和代理配置教程** 
 powershell
 $chrome="C:\Program Files\Google\Chrome\Application\chrome.exe"; $dest="D:\多开"; $profiles="D:\多开用户数据"; if (!(Test-Path $dest)) { New-Item -Path $dest -ItemType Directory }; if (!(Test-Path $profiles)) { New-Item -Path $profiles -ItemType Directory }; for ($i=1; $i -le 1100; $i++) { $lnk="$dest\1-$i.lnk"; $WshShell=New-Object -ComObject WScript.Shell; $shortcut=$WshShell.CreateShortcut($lnk); $shortcut.TargetPath=$chrome; $shortcut.Arguments="--user-data-dir=$profiles\1-$i --proxy-server=`"这里填IP和端口`""; $shortcut.WorkingDirectory=Split-Path $chrome; $shortcut.IconLocation=$chrome; $shortcut.Save(); Write-Host "创建了 1-$i" }
 TG: @kukuAPT  
