@@ -195,7 +195,7 @@
     const EARNVIDS_BASE_URL = "https://earnvidsapi.com/api";
 
 
-    // 1. 本地存储记录管理（新增IP 24小时检查和倒计时计算）
+    // 1. 本地存储记录管理（修复IP+单个视频的24小时检查逻辑）
     const STORAGE_KEY = 'videoTaskRecords';
     const SESSION_KEY = 'videoTaskSession'; // 用于存储会话中的用户名（同浏览器会话内有效）
 
@@ -224,18 +224,21 @@
       return duplicateRecords.length > 0;
     }
 
-    // 新增：获取IP的最早可再次观看时间（返回毫秒级时间戳）
-    function getIpNextAvailableTime(ip) {
+    // 修复：增加videoUrl参数，按“IP+单个视频URL”判断可观看时间（不再限制IP全局）
+    function getIpNextAvailableTime(ip, videoUrl) {
       const dayMs = 24 * 60 * 60 * 1000;
-      const ipRecords = getLocalRecords().filter(record => record.ip === ip);
-      if (ipRecords.length === 0) return 0; // 无记录，返回0表示可立即观看
+      // 仅筛选当前IP对当前视频的记录，不包含其他视频
+      const ipVideoRecords = getLocalRecords().filter(record => 
+        record.ip === ip && record.videoUrl === videoUrl
+      );
+      if (ipVideoRecords.length === 0) return 0; // 该视频无记录，可立即观看
       
-      // 找到最近一次观看记录的时间戳
-      const latestRecord = ipRecords.reduce((latest, record) => {
+      // 找到当前IP对当前视频的最近一次观看记录
+      const latestRecord = ipVideoRecords.reduce((latest, record) => {
         return record.timestamp > latest.timestamp ? record : latest;
-      }, ipRecords[0]);
+      }, ipVideoRecords[0]);
       
-      // 计算24小时后可再次观看的时间
+      // 仅计算当前视频的24小时间隔，不影响其他视频
       return latestRecord.timestamp + dayMs;
     }
 
@@ -379,7 +382,7 @@
     }
 
 
-    // 6. 启动任务（修改为显示精确倒计时）
+    // 6. 启动任务（修复：调用时传入当前视频URL，仅限制当前视频）
     async function startTask() {
       // 清除之前的计时器和窗口引用，防止内存泄漏
       if (localTimer) {
@@ -416,17 +419,24 @@
         saveUsernameToSession(currentUsername);
       }
 
-      // 检查IP是否在24小时内有观看记录（仅对已存储的IP提醒）
-      const nextAvailableTime = getIpNextAvailableTime(userIp);
+      // 先获取当前选中的视频URL（关键：后续判断需要用）
+      const videoUrl = selector.value;
+      if (!videoUrl.trim()) {
+        alert('请选择有效视频');
+        return;
+      }
+
+      // 修复：调用时传入当前视频URL，仅检查“当前IP+当前视频”的24小时限制
+      const nextAvailableTime = getIpNextAvailableTime(userIp, videoUrl);
       const now = Date.now();
       
       if (nextAvailableTime > now) {
-        // 计算剩余时间并显示倒计时
+        // 计算剩余时间并显示倒计时（提示语改为“当前视频”，更精准）
         const remainingMs = nextAvailableTime - now;
         const statusEl = document.getElementById('statusText');
         
         // 立即显示初始剩余时间
-        statusEl.innerHTML = `<span class="warning">当前IP需间隔24小时才能获得收益，还剩${formatRemainingTime(remainingMs)}后可观看。</span>`;
+        statusEl.innerHTML = `<span class="warning">当前视频需间隔24小时才能获得收益，还剩${formatRemainingTime(remainingMs)}后可观看。</span>`;
         
         // 启动倒计时计时器（每分钟更新一次）
         countdownTimer = setInterval(() => {
@@ -434,25 +444,18 @@
           const newRemainingMs = nextAvailableTime - currentMs;
           
           if (newRemainingMs <= 0) {
-            // 倒计时结束，允许观看
+            // 倒计时结束，允许观看当前视频
             clearInterval(countdownTimer);
             countdownTimer = null;
-            statusEl.textContent = '间隔时间已到，可正常观看并获得收益。';
+            statusEl.textContent = '当前视频间隔时间已到，可正常观看并获得收益。';
             return;
           }
           
           // 更新剩余时间显示
-          statusEl.innerHTML = `<span class="warning">当前IP需间隔24小时才能获得收益，还剩${formatRemainingTime(newRemainingMs)}后可观看。</span>`;
+          statusEl.innerHTML = `<span class="warning">当前视频需间隔24小时才能获得收益，还剩${formatRemainingTime(newRemainingMs)}后可观看。</span>`;
         }, 60000); // 每分钟更新一次
         
-        return; // 阻止继续观看
-      }
-
-      // 获取选中的视频链接（支持未来新增视频，无需修改代码）
-      const videoUrl = selector.value;
-      if (!videoUrl.trim()) {
-        alert('请选择有效视频');
-        return;
+        return; // 阻止继续观看当前视频（不影响其他视频）
       }
 
       // 处理bigwings视频（使用本地电脑时间差计时）
