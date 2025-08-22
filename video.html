@@ -29,7 +29,7 @@
     }
 
     h2 {
-      font-size: 24px;
+      font-size: 24px; /* 基础样式保持，实际会被inline style覆盖 */
       margin: 20px 0;
     }
 
@@ -135,7 +135,9 @@
 
 <body>
   <div class="container">
-    <h2>选择视频</h2>
+    <!-- 标题修改：增加id和inline样式控制字体大小 -->
+    <h2 id="videoTitle" style="font-size: 32px;">选择视频</h2>
+    
     <div class="dropdown">
       <select id="videoSelector">
         <option value="https://mivalyo.com/embed/6suaa9gg9y7y" data-name="黄霄雲earnvids 1">黄霄雲earnvids 1</option>
@@ -166,6 +168,12 @@
   </div>
 
   <script>
+    // 页面加载后自动计算视频数量并更新标题
+    window.addEventListener('DOMContentLoaded', () => {
+      const videoCount = document.getElementById('videoSelector').options.length;
+      document.getElementById('videoTitle').textContent = `选择视频（共${videoCount}个）`;
+    });
+
     // 核心变量
     let localTimer = null;
     let localWatchSeconds = 0; // 仅用于mivalyo视频计时
