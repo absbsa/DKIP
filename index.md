@@ -10,7 +10,7 @@
 
 # **批量多开Google浏览器并相互独立代理配置教程** 
 powershell
-$chrome="C:\Program Files\Google\Chrome\Application\chrome.exe"; $dest="D:\多开"; $profiles="D:\多开用户数据"; if (!(Test-Path $dest)) { New-Item -Path $dest -ItemType Directory }; if (!(Test-Path $profiles)) { New-Item -Path $profiles -ItemType Directory }; for ($i=1; $i -le 1100; $i++) { $lnk="$dest\1-$i.lnk"; $WshShell=New-Object -ComObject WScript.Shell; $shortcut=$WshShell.CreateShortcut($lnk); $shortcut.TargetPath=$chrome; $shortcut.Arguments="--user-data-dir=$profiles\1-$i --proxy-server=`"p.webshare.io:80`""; $shortcut.WorkingDirectory=Split-Path $chrome; $shortcut.IconLocation=$chrome; $shortcut.Save(); Write-Host "创建了 1-$i" }
+$chrome="C:\Program Files\Google\Chrome\Application\chrome.exe"; $dest="D:\多开"; $profiles="D:\多开用户数据"; if (!(Test-Path $dest)) { New-Item -Path $dest -ItemType Directory }; if (!(Test-Path $profiles)) { New-Item -Path $profiles -ItemType Directory }; for ($i=1; $i -le 1100; $i++) { $lnk="$dest\1-$i.lnk"; $WshShell=New-Object -ComObject WScript.Shell; $shortcut=$WshShell.CreateShortcut($lnk); $shortcut.TargetPath=$chrome; $shortcut.Arguments="--user-data-dir=$profiles\1-$i --proxy-server=`"这里填IP和端口`""; $shortcut.WorkingDirectory=Split-Path $chrome; $shortcut.IconLocation=$chrome; $shortcut.Save(); Write-Host "创建了 1-$i" }
 TG: @kukuAPT  
 
 ## [撸空投三件套四件套,Gmail0.9元1/个，twitter0.4元/个，telegram3.5元/个](https://accsmarket.com/en/?ref=793694)  
