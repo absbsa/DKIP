@@ -170,6 +170,7 @@
     let localWatchSeconds = 0; // 仅用于mivalyo视频计时
     let userIp = '';
     let currentUsername = '';
+    let usernameSaved = false; // 标记用户名是否已保存（同会话内有效）
     let videoWindow = null; // 用于监控bigwings视频窗口
     const iframe = document.getElementById('videoFrame');
     const selector = document.getElementById('videoSelector');
@@ -181,6 +182,7 @@
 
     // 1. 本地存储记录管理（保持不变）
     const STORAGE_KEY = 'videoTaskRecords';
+    const SESSION_KEY = 'videoTaskSession'; // 用于存储会话中的用户名（同浏览器会话内有效）
 
     function getLocalRecords() {
       const data = localStorage.getItem(STORAGE_KEY) || '{"records":[]}';
@@ -205,6 +207,29 @@
         now - record.timestamp <= dayMs
       );
       return duplicateRecords.length > 0;
+    }
+
+    // 保存用户名到会话存储（浏览器关闭后失效，符合仅同会话内记忆的需求）
+    function saveUsernameToSession(username) {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+        username: username,
+        ip: userIp, // 绑定当前IP，IP变化时需重新输入
+        timestamp: Date.now()
+      }));
+    }
+
+    // 从会话存储加载用户名（验证IP是否一致）
+    function loadUsernameFromSession() {
+      const sessionData = sessionStorage.getItem(SESSION_KEY);
+      if (sessionData) {
+        const data = JSON.parse(sessionData);
+        // 验证IP是否与当前一致，不一致则需要重新输入
+        if (data.ip === userIp) {
+          currentUsername = data.username;
+          usernameSaved = true;
+          document.getElementById('usernameDisplay').innerText = `当前用户：${currentUsername}`;
+        }
+      }
     }
 
 
@@ -316,7 +341,7 @@
     }
 
 
-    // 6. 启动任务（仅修改bigwings视频计时逻辑）
+    // 6. 启动任务（修改为仅首次输入用户名）
     async function startTask() {
       // 清除之前的计时器和窗口引用，防止内存泄漏
       if (localTimer) {
@@ -335,16 +360,21 @@
       document.getElementById('statusText').textContent = '';
       document.getElementById('retryNotice').textContent = '';
 
-      // 验证用户名
-      const username = prompt('请输入您的用户名（必填）：', '');
-      if (!username || !username.trim()) {
-        alert('用户名不能为空，请重新输入！');
-        return;
+      // 验证用户名（仅首次需要输入，IP不变且会话未关闭则无需重复输入）
+      if (!usernameSaved) {
+        const username = prompt('请输入您的用户名（必填）：', '');
+        if (!username || !username.trim()) {
+          alert('用户名不能为空，请重新输入！');
+          return;
+        }
+        currentUsername = username.trim();
+        usernameSaved = true;
+        document.getElementById('usernameDisplay').innerText = `当前用户：${currentUsername}`;
+        // 保存到会话存储（绑定当前IP）
+        saveUsernameToSession(currentUsername);
       }
-      currentUsername = username.trim();
-      document.getElementById('usernameDisplay').innerText = `当前用户：${currentUsername}`;
 
-      // 获取选中的视频链接
+      // 获取选中的视频链接（支持未来新增视频，无需修改代码）
       const videoUrl = selector.value;
       if (!videoUrl.trim()) {
         alert('请选择有效视频');
@@ -439,6 +469,10 @@
               clearInterval(localTimer);
               localTimer = null;
               handleQualification(videoUrl, 120);
+              document.getElementById('statusText').textContent = '已观看满120秒，任务达标！';
+            } else {
+              document.getElementById('statusText').textContent =
+                `正在观看...（已观看：${localWatchSeconds}秒 / 需120秒）`;
             }
           }, 1000);
         };
@@ -465,7 +499,7 @@
     }
 
 
-    // 8. 上报数据（保持不变）
+    // 8. 上报数据（保持不变，确保按原有方式存储到数据库）
     async function reportToBackend(finalSeconds, videoUrl, retryCount = 3) {
       const reportData = {
         username: currentUsername,
@@ -493,7 +527,7 @@
         const result = await response.json();
         if (result.success) {
           saveRecord({ ip: userIp, videoUrl: videoUrl });
-          retryNotice.textContent = '数据上报成功！';
+          retryNotice.textContent = '数据上报成功！可选择其他视频继续观看。';
           console.log('上报成功:', result);
         } else {
           retryNotice.textContent = `上报失败: ${result.message}`;
@@ -527,11 +561,13 @@
     });
 
 
-    // 10. 初始化（保持不变）
+    // 10. 初始化（增加会话中用户名的加载）
     (async () => {
       try {
         userIp = await getIp();
         await loadAccountInfo();
+        // 尝试从会话存储加载用户名（IP不变则有效）
+        loadUsernameFromSession();
       } catch (error) {
         console.error('初始化错误:', error);
         // 即使初始化出错也保证页面可操作
