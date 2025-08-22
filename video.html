@@ -130,6 +130,11 @@
     .account-section {
       margin: 5px 0;
     }
+
+    .warning {
+      color: #ff4d4d;
+      font-weight: bold;
+    }
   </style>
 </head>
 
@@ -150,7 +155,7 @@
     <div class="rule">
       点击视频开始按钮，连续点击直至无广告弹出，不能屏蔽广告，弹出后不管<br>
       如点击开始后无广告，连续点击页面直至看到视频进度条<br>
-      1个IP可以观看列出的所有视频<br>
+      1个IP可以观看列出的所有视频，但需间隔24小时才能获得收益<br>
       每个视频需观看满 <span style="color: #4caf50;">120 秒</span> 才算合格
     </div>
     <div class="account-info" id="accountInfo">
@@ -181,6 +186,7 @@
     let currentUsername = '';
     let usernameSaved = false; // 标记用户名是否已保存（同会话内有效）
     let videoWindow = null; // 用于监控bigwings视频窗口
+    let countdownTimer = null; // 倒计时计时器
     const iframe = document.getElementById('videoFrame');
     const selector = document.getElementById('videoSelector');
     const backendUrl = 'https://video-backend-nmeq.onrender.com';
@@ -189,7 +195,7 @@
     const EARNVIDS_BASE_URL = "https://earnvidsapi.com/api";
 
 
-    // 1. 本地存储记录管理（保持不变）
+    // 1. 本地存储记录管理（新增IP 24小时检查和倒计时计算）
     const STORAGE_KEY = 'videoTaskRecords';
     const SESSION_KEY = 'videoTaskSession'; // 用于存储会话中的用户名（同浏览器会话内有效）
 
@@ -216,6 +222,29 @@
         now - record.timestamp <= dayMs
       );
       return duplicateRecords.length > 0;
+    }
+
+    // 新增：获取IP的最早可再次观看时间（返回毫秒级时间戳）
+    function getIpNextAvailableTime(ip) {
+      const dayMs = 24 * 60 * 60 * 1000;
+      const ipRecords = getLocalRecords().filter(record => record.ip === ip);
+      if (ipRecords.length === 0) return 0; // 无记录，返回0表示可立即观看
+      
+      // 找到最近一次观看记录的时间戳
+      const latestRecord = ipRecords.reduce((latest, record) => {
+        return record.timestamp > latest.timestamp ? record : latest;
+      }, ipRecords[0]);
+      
+      // 计算24小时后可再次观看的时间
+      return latestRecord.timestamp + dayMs;
+    }
+
+    // 新增：格式化剩余时间（毫秒转小时:分钟）
+    function formatRemainingTime(ms) {
+      const totalMinutes = Math.ceil(ms / (60 * 1000));
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return `${hours}小时${minutes}分钟`;
     }
 
     // 保存用户名到会话存储（浏览器关闭后失效，符合仅同会话内记忆的需求）
@@ -350,12 +379,16 @@
     }
 
 
-    // 6. 启动任务（修改为仅首次输入用户名）
+    // 6. 启动任务（修改为显示精确倒计时）
     async function startTask() {
       // 清除之前的计时器和窗口引用，防止内存泄漏
       if (localTimer) {
         clearInterval(localTimer);
         localTimer = null;
+      }
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
       }
       if (videoWindow && !videoWindow.closed) {
         try {
@@ -381,6 +414,38 @@
         document.getElementById('usernameDisplay').innerText = `当前用户：${currentUsername}`;
         // 保存到会话存储（绑定当前IP）
         saveUsernameToSession(currentUsername);
+      }
+
+      // 检查IP是否在24小时内有观看记录（仅对已存储的IP提醒）
+      const nextAvailableTime = getIpNextAvailableTime(userIp);
+      const now = Date.now();
+      
+      if (nextAvailableTime > now) {
+        // 计算剩余时间并显示倒计时
+        const remainingMs = nextAvailableTime - now;
+        const statusEl = document.getElementById('statusText');
+        
+        // 立即显示初始剩余时间
+        statusEl.innerHTML = `<span class="warning">当前IP需间隔24小时才能获得收益，还剩${formatRemainingTime(remainingMs)}后可观看。</span>`;
+        
+        // 启动倒计时计时器（每分钟更新一次）
+        countdownTimer = setInterval(() => {
+          const currentMs = Date.now();
+          const newRemainingMs = nextAvailableTime - currentMs;
+          
+          if (newRemainingMs <= 0) {
+            // 倒计时结束，允许观看
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+            statusEl.textContent = '间隔时间已到，可正常观看并获得收益。';
+            return;
+          }
+          
+          // 更新剩余时间显示
+          statusEl.innerHTML = `<span class="warning">当前IP需间隔24小时才能获得收益，还剩${formatRemainingTime(newRemainingMs)}后可观看。</span>`;
+        }, 60000); // 每分钟更新一次
+        
+        return; // 阻止继续观看
       }
 
       // 获取选中的视频链接（支持未来新增视频，无需修改代码）
@@ -555,10 +620,13 @@
     }
 
 
-    // 9. 页面关闭时清理资源（保持不变）
+    // 9. 页面关闭时清理资源（增加倒计时计时器清理）
     window.addEventListener('beforeunload', () => {
       if (localTimer) {
         clearInterval(localTimer);
+      }
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
       }
       if (videoWindow && !videoWindow.closed) {
         try {
